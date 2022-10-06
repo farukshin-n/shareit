@@ -12,7 +12,7 @@ import java.util.*;
 @Slf4j
 @Getter
 @Component
-public class InMemoryUserRepository implements UserRepository{
+public class InMemoryUserRepository implements UserRepository {
     private final Map<Long, User> users = new HashMap<>();
     private final Set<String> emails = new HashSet<>();
     private long id = 1;
@@ -58,7 +58,7 @@ public class InMemoryUserRepository implements UserRepository{
             users.remove(userToDelete.getId());
             log.info("User with id {} is deleted from database.", userId);
         } else {
-            throw new SubstanceNotFoundException(String.format("There isn't user with id %d", userId ));
+            throw new SubstanceNotFoundException(String.format("There isn't user with id %d", userId));
         }
     }
 
