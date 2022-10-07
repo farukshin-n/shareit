@@ -20,6 +20,6 @@ public class User {
         if (userDto.getEmail() == null) {
             userDto.setEmail(email);
         }
-        return new User(id, userDto.getName(), userDto.getEmail()) ;
+        return new User(id, userDto.getName(), userDto.getEmail());
     }
 }

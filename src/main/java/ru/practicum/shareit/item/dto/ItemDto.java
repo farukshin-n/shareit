@@ -3,7 +3,6 @@ package ru.practicum.shareit.item.dto;
 import lombok.*;
 import ru.practicum.shareit.Create;
 import ru.practicum.shareit.Update;
-import ru.practicum.shareit.item.model.Item;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
