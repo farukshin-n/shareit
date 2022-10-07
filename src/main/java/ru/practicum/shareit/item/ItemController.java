@@ -5,10 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.Create;
+import ru.practicum.shareit.Update;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.service.ItemService;
 
+import javax.validation.Valid;
 import java.util.List;
+import java.util.stream.Stream;
 
 
 @RestController
@@ -41,7 +44,7 @@ public class ItemController {
     public ItemDto updateItem(
             @RequestHeader("X-Sharer-User-Id") Long ownerId,
             @PathVariable Long itemId,
-            @RequestBody ItemDto itemDto) {
+            @Validated({Update.class}) @RequestBody ItemDto itemDto) {
         log.info("We have request for updating item with id {} by user with id {}.", itemId, ownerId);
         return itemService.updateItem(ownerId, itemId, itemDto);
     }
@@ -56,7 +59,8 @@ public class ItemController {
     }
 
     @GetMapping("/search")
-    public List<ItemDto> searchItem(@RequestParam String text) {
+    public Stream<ItemDto> searchItem(@RequestParam String text) {
+        log.info("We have request for search {}.", text);
         return itemService.searchItem(text);
     }
 }

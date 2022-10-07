@@ -12,6 +12,8 @@ import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -21,13 +23,12 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
 
     @Override
-    public ItemDto createItem(Long id, ItemDto itemDto) {
-        if (userRepository.getAllUsers().contains(userRepository.getUser(id))) {
-            final Item item = ItemMapper.dtoToItem(itemDto, id);
-            itemRepository.addItem(item);
-            return ItemMapper.itemToDto(item);
+    public ItemDto createItem(Long userId, ItemDto itemDto) {
+        if (userRepository.getUser(userId) != null) {
+            final Item item = ItemMapper.dtoToItem(itemDto, userId);
+            return ItemMapper.itemToDto(itemRepository.addItem(item));
         } else {
-            throw new SubstanceNotFoundException(String.format("There isn't user with id %d in database.", id));
+            throw new SubstanceNotFoundException(String.format("There isn't user with id %d in database.", userId));
         }
     }
 
@@ -40,14 +41,16 @@ public class ItemServiceImpl implements ItemService {
     public List<ItemDto> getAllItemsByUser(Long userId) {
         final List<Item> resultListItems = itemRepository.getAllItemsOfUser(userId);
 
-        return listItemToListItemDto(resultListItems);
+        return resultListItems.stream()
+                .map(ItemMapper::itemToDto)
+                .collect(Collectors.toList());
     }
 
     @Override
     public ItemDto updateItem(Long ownerId, Long itemId, ItemDto itemDto) {
         Item item = itemRepository.getItem(itemId);
         if (ownerId.equals(item.getOwnerId())) {
-            Item itemToUpdate = itemDto.update(item);
+            Item itemToUpdate = item.update(itemDto);
             final Item updatedItem = itemRepository.updateItem(itemToUpdate);
             return ItemMapper.itemToDto(updatedItem);
         } else {
@@ -73,15 +76,8 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemDto> searchItem(String text) {
-        return listItemToListItemDto(itemRepository.searchItems(text));
-    }
-
-    private List<ItemDto> listItemToListItemDto(List<Item> items) {
-        List<ItemDto> resultList = new ArrayList<>();
-        for (Item item : items) {
-            resultList.add(ItemMapper.itemToDto(item));
-        }
-        return resultList;
+    public Stream<ItemDto> searchItem(String text) {
+        return itemRepository.searchItems(text)
+                .map(ItemMapper::itemToDto);
     }
 }

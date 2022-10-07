@@ -1,20 +1,25 @@
 package ru.practicum.shareit.user.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import ru.practicum.shareit.Create;
-
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
+import ru.practicum.shareit.user.dto.UserDto;
 
 @Data
 @RequiredArgsConstructor
+@AllArgsConstructor
 public class User {
     private long id;
-    @NotBlank(message = "Name cannot be blank", groups = {Create.class})
     private final String name;
-    @NotEmpty(groups = {Create.class})
-    @Email(message = "Email should be correct", groups = {Create.class})
     private final String email;
+
+    public User update(UserDto userDto) {
+        if (userDto.getName() == null) {
+            userDto.setName(name);
+        }
+        if (userDto.getEmail() == null) {
+            userDto.setEmail(email);
+        }
+        return new User(id, userDto.getName(), userDto.getEmail()) ;
+    }
 }

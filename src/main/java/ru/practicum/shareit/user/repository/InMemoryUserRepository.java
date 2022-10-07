@@ -8,6 +8,7 @@ import ru.practicum.shareit.exception.SubstanceNotFoundException;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 @Slf4j
 @Getter
@@ -72,8 +73,8 @@ public class InMemoryUserRepository implements UserRepository {
     }
 
     @Override
-    public List<User> getAllUsers() {
-        return new ArrayList<>(users.values());
+    public Stream<User> getAllUsers() {
+        return users.values().stream();
     }
 
     private long generateId() {

@@ -1,7 +1,7 @@
 package ru.practicum.shareit.user.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.model.User;
@@ -9,16 +9,13 @@ import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
-
-    @Autowired
-    public UserServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     @Override
     public UserDto addUser(UserDto userDto) {
@@ -37,19 +34,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserDto> getAllUsers() {
-        final List<User> userList = userRepository.getAllUsers();
-        List<UserDto> resultList = new ArrayList<>();
-        for (User user : userList) {
-            resultList.add(UserMapper.toUserDto(user));
-        }
-        return resultList;
+    public Stream<UserDto> getAllUsers() {
+        return userRepository.getAllUsers().map(UserMapper::toUserDto);
     }
 
     @Override
     public UserDto updateUser(Long userId, UserDto userDto) {
         User user = userRepository.getUser(userId);
-        User userToUpdate = userDto.update(user);
+        User userToUpdate = user.update(userDto);
         return UserMapper.toUserDto(userRepository.updateUser(userToUpdate));
     }
 

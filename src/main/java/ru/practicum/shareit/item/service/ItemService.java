@@ -3,6 +3,7 @@ package ru.practicum.shareit.item.service;
 import ru.practicum.shareit.item.dto.ItemDto;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 
 public interface ItemService {
@@ -16,5 +17,5 @@ public interface ItemService {
 
     void deleteItem(Long ownerId, Long itemId);
 
-    List<ItemDto> searchItem(String text);
+    Stream<ItemDto> searchItem(String text);
 }

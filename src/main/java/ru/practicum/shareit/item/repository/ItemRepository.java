@@ -3,6 +3,7 @@ package ru.practicum.shareit.item.repository;
 import ru.practicum.shareit.item.model.Item;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public interface ItemRepository {
     Item addItem(Item item);
@@ -15,5 +16,5 @@ public interface ItemRepository {
 
     void deleteItem(long itemId);
 
-    List<Item> searchItems(String text);
+    Stream<Item> searchItems(String text);
 }

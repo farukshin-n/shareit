@@ -2,6 +2,7 @@ package ru.practicum.shareit.item.dto;
 
 import lombok.*;
 import ru.practicum.shareit.Create;
+import ru.practicum.shareit.Update;
 import ru.practicum.shareit.item.model.Item;
 
 import javax.validation.constraints.NotBlank;
@@ -20,27 +21,8 @@ public class ItemDto {
     @NotBlank(groups = {Create.class})
     @Size(max = 200,
             message = "Description cannot be longer than 200 characters.",
-            groups = {Create.class})
+            groups = {Create.class, Update.class})
     private String description;
     @NotNull(groups = {Create.class})
     private Boolean available;
-
-    public Item update(Item item) {
-        if (name == null) {
-            this.name = item.getName();
-        }
-        if (description == null) {
-            this.description = item.getDescription();
-        }
-        if (available == null) {
-            this.available = item.isAvailable();
-        }
-
-        return new Item(
-                item.getId(),
-                this.name,
-                this.description,
-                this.available,
-                item.getOwnerId());
-    }
 }

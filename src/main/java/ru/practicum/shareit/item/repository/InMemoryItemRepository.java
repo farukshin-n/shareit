@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Data
@@ -84,21 +83,21 @@ public class InMemoryItemRepository implements ItemRepository {
     }
 
     @Override
-    public List<Item> searchItems(String text) {
+    public Stream<Item> searchItems(String text) {
         String textForSearch = text.trim().toLowerCase();
-        if (textForSearch.length() > 0) {
-            Stream<Item> searchItemInName = items.values().stream()
-                    .filter(Item::isAvailable)
-                    .filter(item -> item.getName().toLowerCase().contains(textForSearch));
-            Stream<Item> searchItemInDescription = items.values().stream()
-                    .filter(Item::isAvailable)
-                    .filter(item -> item.getDescription().toLowerCase().contains(textForSearch));
+        return textForSearch.isEmpty() ? Stream.empty() :
+                items.values().stream().filter(item -> isItemAvailableAndHasText(item, textForSearch));
+    }
 
-            return Stream.concat(searchItemInName, searchItemInDescription)
-                    .distinct()
-                    .collect(Collectors.toList());
+    private static boolean isItemAvailableAndHasText(Item item, String textForSearch) {
+        String name = item.getName().toLowerCase();
+        String description = item.getDescription().toLowerCase();
+
+        if (item.isAvailable() &&
+                (name.contains(textForSearch) || description.contains(textForSearch))) {
+            return true;
         } else {
-            return new ArrayList<>();
+            return false;
         }
     }
 

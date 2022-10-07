@@ -10,7 +10,7 @@ import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
 
 import javax.validation.Valid;
-import java.util.List;
+import java.util.stream.Stream;
 
 @Slf4j
 @RestController
@@ -26,13 +26,13 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public UserDto getUser(@Valid @PathVariable Long id) {
+    public UserDto getUser(@PathVariable Long id) {
         log.info("Request for getting user with id {}.", id);
         return userService.getUser(id);
     }
 
     @GetMapping
-    public List<UserDto> getAllUsers() {
+    public Stream<UserDto> getAllUsers() {
         log.info("Request for getting all registered users");
         return userService.getAllUsers();
     }
