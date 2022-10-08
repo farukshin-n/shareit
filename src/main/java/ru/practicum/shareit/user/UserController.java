@@ -9,7 +9,7 @@ import ru.practicum.shareit.Update;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
 
-import java.util.stream.Stream;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -31,7 +31,7 @@ public class UserController {
     }
 
     @GetMapping
-    public Stream<UserDto> getAllUsers() {
+    public List<UserDto> getAllUsers() {
         log.info("Request for getting all registered users");
         return userService.getAllUsers();
     }

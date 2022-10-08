@@ -2,14 +2,14 @@ package ru.practicum.shareit.user.repository;
 
 import ru.practicum.shareit.user.model.User;
 
-import java.util.stream.Stream;
+import java.util.List;
 
 public interface UserRepository {
     User saveUser(User user);
 
     User getUser(Long id);
 
-    Stream<User> getAllUsers();
+    List<User> getAllUsers();
 
     User updateUser(User user);
 

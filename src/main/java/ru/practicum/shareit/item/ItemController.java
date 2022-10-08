@@ -10,8 +10,6 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.service.ItemService;
 
 import java.util.List;
-import java.util.stream.Stream;
-
 
 @RestController
 @RequestMapping("/items")
@@ -58,7 +56,7 @@ public class ItemController {
     }
 
     @GetMapping("/search")
-    public Stream<ItemDto> searchItem(@RequestParam String text) {
+    public List<ItemDto> searchItem(@RequestParam String text) {
         log.info("We have request for search {}.", text);
         return itemService.searchItem(text);
     }

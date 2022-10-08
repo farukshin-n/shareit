@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 @Data
 @Component
@@ -83,22 +83,12 @@ public class InMemoryItemRepository implements ItemRepository {
     }
 
     @Override
-    public Stream<Item> searchItems(String text) {
+    public List<Item> searchItems(String text) {
         String textForSearch = text.trim().toLowerCase();
-        return textForSearch.isEmpty() ? Stream.empty() :
-                items.values().stream().filter(item -> isItemAvailableAndHasText(item, textForSearch));
-    }
-
-    private static boolean isItemAvailableAndHasText(Item item, String textForSearch) {
-        String name = item.getName().toLowerCase();
-        String description = item.getDescription().toLowerCase();
-
-        if (item.isAvailable() &&
-                (name.contains(textForSearch) || description.contains(textForSearch))) {
-            return true;
-        } else {
-            return false;
-        }
+        return textForSearch.isEmpty() ? new ArrayList<>() :
+                items.values().stream().filter(Item::isAvailable).filter(i ->
+                        i.getName().toLowerCase().contains(textForSearch) ||
+                        i.getDescription().toLowerCase().contains(textForSearch)).collect(Collectors.toList());
     }
 
     private long generateId() {

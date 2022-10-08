@@ -12,7 +12,6 @@ import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -49,9 +48,16 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto updateItem(Long ownerId, Long itemId, ItemDto itemDto) {
         Item item = itemRepository.getItem(itemId);
         if (ownerId.equals(item.getOwnerId())) {
-            Item itemToUpdate = item.update(itemDto);
-            final Item updatedItem = itemRepository.updateItem(itemToUpdate);
-            return ItemMapper.itemToDto(updatedItem);
+            if (itemDto.getName() != null) {
+                item.setName(itemDto.getName());
+            }
+            if (itemDto.getDescription() != null) {
+                item.setDescription(itemDto.getDescription());
+            }
+            if (itemDto.getAvailable() != null) {
+                item.setAvailable(itemDto.getAvailable());
+            }
+            return ItemMapper.itemToDto(itemRepository.updateItem(item));
         } else {
             throw new ForbiddenException(String.format(
                     "User with id %d cannot edit item with %d",
@@ -75,8 +81,9 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Stream<ItemDto> searchItem(String text) {
-        return itemRepository.searchItems(text)
-                .map(ItemMapper::itemToDto);
+    public List<ItemDto> searchItem(String text) {
+        return itemRepository.searchItems(text).stream()
+                .map(ItemMapper::itemToDto)
+                .collect(Collectors.toList());
     }
 }

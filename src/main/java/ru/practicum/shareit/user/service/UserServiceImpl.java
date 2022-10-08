@@ -7,7 +7,8 @@ import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -32,8 +33,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Stream<UserDto> getAllUsers() {
-        return userRepository.getAllUsers().map(UserMapper::toUserDto);
+    public List<UserDto> getAllUsers() {
+        return userRepository.getAllUsers().stream()
+                .map(UserMapper::toUserDto)
+                .collect(Collectors.toList());
     }
 
     @Override
