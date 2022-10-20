@@ -80,16 +80,16 @@ public class BookingServiceImpl implements BookingService {
 
         switch (state) {
             case WAITING:
-                resultList = bookingRepository.findBookingsByBookerIdAndStatus(
+                resultList = bookingRepository.findBookingsByBooker_IdAndStatus(
                         userId,
-                        BookingState.WAITING,
+                        BookingStatus.WAITING,
                         Sort.by(Sort.Direction.DESC, "start")
                 );
                 break;
             case REJECTED:
-                resultList = bookingRepository.findBookingsByBookerIdAndStatus(
+                resultList = bookingRepository.findBookingsByBooker_IdAndStatus(
                         userId,
-                        BookingState.REJECTED,
+                        BookingStatus.REJECTED,
                         Sort.by(Sort.Direction.DESC, "start")
                 );
                 break;
@@ -130,7 +130,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDto> getUserBookedItems(long userId, BookingState state) {
+    public List<BookingDto> getOwnerBookingList(long userId, BookingState state) {
         userRepository.findById(userId).orElseThrow(() -> new SubstanceNotFoundException(
                 String.format("There isn't user with id %d in database.", userId)));
         List<Booking> resultList;

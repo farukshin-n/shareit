@@ -53,6 +53,6 @@ public class BookingController {
     public List<BookingDto> getUserBookedItems(
             @RequestHeader("X-Sharer-User-Id") long id,
             @RequestParam(required = false, defaultValue = "ALL") BookingState state) {
-        return service.getUserBookedItems(id, state);
+        return service.getOwnerBookingList(id, state);
     }
 }
