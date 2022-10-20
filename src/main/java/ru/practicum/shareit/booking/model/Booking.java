@@ -1,25 +1,35 @@
 package ru.practicum.shareit.booking.model;
 
-import lombok.Value;
-import ru.practicum.shareit.booking.BookingStatus;
+import lombok.*;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
-import javax.validation.constraints.NotNull;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
-/**
- * TODO Sprint add-bookings.
- */
-@Value
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "bookings")
+@EqualsAndHashCode
 public class Booking {
-    long id;
-    LocalDateTime start;
-    LocalDateTime end;
-    @NotNull(message = "Booking cannot be null")
-    Item item;
-    @NotNull(message = "Booker cannot be null")
-    User booker;
-    @NotNull(message = "Item status cannot be null")
-    BookingStatus status;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "booking_id")
+    private Long id;
+    @Column(name = "start_date")
+    private LocalDateTime start;
+    @Column(name = "end_date")
+    private LocalDateTime end;
+    @ManyToOne
+    @JoinColumn(name = "item_id")
+    private Item item;
+    @ManyToOne
+    @JoinColumn(name = "booker_id")
+    private User booker;
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private BookingStatus status;
 }
