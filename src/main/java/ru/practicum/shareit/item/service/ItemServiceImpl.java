@@ -28,6 +28,8 @@ import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -95,12 +97,13 @@ public class ItemServiceImpl implements ItemService {
                     .map(BookingMapper::toBookingDtoWithBookerID)
                     .orElse(null);
         }
+        List<CommentDto> comments = commentRepository.findCommentsByItem_Id(item.getId())
+                .stream().map(CommentMapper::toCommentDto)
+                .collect(Collectors.toList());
 
         return ItemMapper.toItemDtoWithBookingsAndComments(
                 item,
-                commentRepository.findCommentsByItem_Id(item.getId())
-                        .stream().map(CommentMapper::toCommentDto)
-                        .collect(Collectors.toList()),
+                comments,
                 currentOrPastBooking,
                 futureBooking
         );
@@ -108,23 +111,40 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<ItemDtoWithBookingsAndComments> getAllItemsByUserId(Long userId) {
-        return itemRepository.findByOwnerIdOrderById(userId)
-                .stream()
-                .map(item -> ItemMapper.toItemDtoWithBookingsAndComments(
-                        item,
-                        commentRepository
-                                .findCommentsByItem_Id(item.getId())
-                                .stream()
-                                .map(CommentMapper::toCommentDto)
-                                .collect(Collectors.toList()),
-                        bookingRepository.getPastOrCurrentBookingByItemId(item.getId())
-                                .map(BookingMapper::toBookingDtoWithBookerID)
-                                .orElse(null),
-                        bookingRepository.getFutureBookingByItemId(item.getId())
-                                .map(BookingMapper::toBookingDtoWithBookerID)
-                                .orElse(null)
-                ))
-                .collect(Collectors.toList());
+        List<ItemDtoWithBookingsAndComments> resultList = new ArrayList<>();
+        List<Item> items = itemRepository.findByOwnerIdOrderById(userId);
+        Set<Long> itemIds = items.stream().map(Item::getId).collect(Collectors.toSet());
+        List<Comment> comments = commentRepository.findCommentsByItem_IdIn(itemIds);
+        List<Booking> bookings = bookingRepository.getBookingsByItem_IdInOrderByEndAsc(itemIds);
+
+        for (Item item : items) {
+            List<CommentDto> commentDtos = new ArrayList<>();
+            for (Comment comment : comments) {
+                if (comment.getItem().equals(item)) {
+                    commentDtos.add(CommentMapper.toCommentDto(comment));
+                }
+            }
+            BookingDtoWithBookerId pastOrCurrentBooking = null;
+            BookingDtoWithBookerId futureBooking = null;
+            for (int i = 0; i < bookings.size(); i++) {
+                Booking booking = bookings.get(i);
+                if (booking.getStart().isAfter(LocalDateTime.now())) {
+                    futureBooking = BookingMapper.toBookingDtoWithBookerID(booking);
+                    if (i != 0) {
+                        pastOrCurrentBooking = BookingMapper.toBookingDtoWithBookerID(bookings.get(i - 1));
+                    }
+                    break;
+                }
+            }
+            resultList.add(
+                    ItemMapper.toItemDtoWithBookingsAndComments(
+                            item,
+                            commentDtos,
+                            pastOrCurrentBooking,
+                            futureBooking
+            ));
+        }
+        return resultList;
     }
 
     @Override

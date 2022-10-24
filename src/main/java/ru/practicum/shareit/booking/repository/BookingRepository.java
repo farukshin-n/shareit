@@ -10,6 +10,7 @@ import ru.practicum.shareit.booking.model.BookingStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
@@ -44,11 +45,27 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> getPastOrCurrentBookingByItemId(long id);
 
     @Query(value = "SELECT * FROM bookings " +
+            "WHERE item_id IN ? AND start_date < now() " +
+            "ORDER BY end_date DESC " +
+            "LIMIT 1",
+            nativeQuery = true)
+    List<Optional<Booking>> getPastOrCurrentBookingByItemIdIn(Set<Long> itemIds);
+
+    List<Booking> getBookingsByItem_IdInOrderByEndAsc(Set<Long> itemIds);
+
+    @Query(value = "SELECT * FROM bookings " +
             "WHERE item_id = ? AND start_date > now() " +
             "ORDER BY start_date " +
             "LIMIT 1",
             nativeQuery = true)
     Optional<Booking> getFutureBookingByItemId(long id);
+
+    @Query(value = "SELECT * FROM bookings " +
+            "WHERE item_id IN ? AND start_date > now() " +
+            "ORDER BY start_date " +
+            "LIMIT 1",
+            nativeQuery = true)
+    List<Optional<Booking>> getFutureBookingByItemIdList(Set<Long> itemIds);
 
     // all
     List<Booking> findBookingsByBooker_Id(long id, Sort sort);

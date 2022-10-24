@@ -199,7 +199,7 @@ public class BookingServiceImpl implements BookingService {
             status = BookingStatus.REJECTED;
         }
         if (booking.getStatus() == status) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(String.format("This booking already has status {}.", status));
         }
         booking.setStatus(status);
         Booking newBooking = bookingRepository.save(booking);
