@@ -123,24 +123,31 @@ public class ItemServiceImpl implements ItemService {
                     commentDtos.add(CommentMapper.toCommentDto(comment));
                 }
             }
-            BookingDtoWithBookerId pastOrCurrentBooking = null;
-            BookingDtoWithBookerId futureBooking = null;
-            for (int i = 0; i < bookings.size(); i++) {
-                Booking booking = bookings.get(i);
-                if (booking.getStart().isAfter(LocalDateTime.now())) {
-                    futureBooking = BookingMapper.toBookingDtoWithBookerID(booking);
-                    if (i != 0) {
-                        pastOrCurrentBooking = BookingMapper.toBookingDtoWithBookerID(bookings.get(i - 1));
-                    }
-                    break;
-                }
+            List<Booking> pastOrCurrentBooking = bookings.stream()
+                            .filter(booking -> booking.getItem().equals(item))
+                            .filter(booking -> booking.getStart().isBefore(LocalDateTime.now()))
+                            .limit(1)
+                            .collect(Collectors.toList());
+            BookingDtoWithBookerId lastBooking = null;
+            if (pastOrCurrentBooking.size() != 0) {
+                lastBooking = BookingMapper.toBookingDtoWithBookerID(pastOrCurrentBooking.get(0));
             }
+            List<Booking> futureBooking = bookings.stream()
+                            .filter(booking -> booking.getItem().equals(item))
+                            .filter(booking -> booking.getStart().isAfter(LocalDateTime.now()))
+                            .limit(1)
+                            .collect(Collectors.toList());
+            BookingDtoWithBookerId nextBooking = null;
+            if (futureBooking.size() != 0) {
+                nextBooking = BookingMapper.toBookingDtoWithBookerID(futureBooking.get(0));
+            }
+
             resultList.add(
                     ItemMapper.toItemDtoWithBookingsAndComments(
                             item,
                             commentDtos,
-                            pastOrCurrentBooking,
-                            futureBooking
+                            lastBooking,
+                            nextBooking
             ));
         }
         return resultList;
