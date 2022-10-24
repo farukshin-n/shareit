@@ -5,28 +5,37 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @Slf4j
 @RestControllerAdvice
 public class ErrorHandler {
-    @ExceptionHandler(SubstanceNotFoundException.class)
+    @ExceptionHandler({NotAvailableException.class, IllegalStartEndOfBookingException.class,
+            CommentFromUserWithoutBookingException.class, IllegalArgumentException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleNotAvailableCases(RuntimeException e) {
+        log.error("400 {}", e.getMessage(), e);
+        return new ErrorResponse(e.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleMethodArgumentMismatchCase(MethodArgumentTypeMismatchException e) {
+        log.error("400 {}", e.getMessage(), e);
+        return new ErrorResponse("Unknown state: UNSUPPORTED_STATUS");
+    }
+
+    @ExceptionHandler({SubstanceNotFoundException.class, ForbiddenException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleNotFoundCases(RuntimeException e) {
         log.error("404 {}", e.getMessage(), e);
-        return new ErrorResponse("Object not found", e.getMessage());
+        return new ErrorResponse(e.getMessage());
     }
 
-    @ExceptionHandler(DuplicateEmailException.class)
+    @ExceptionHandler({DuplicateEmailException.class})
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleDuplicateEmailCases(RuntimeException e) {
+    public ErrorResponse handleConflictCases(RuntimeException e) {
         log.error("409 {}", e.getMessage(), e);
-        return new ErrorResponse("Conflict with email", e.getMessage());
-    }
-
-    @ExceptionHandler(ForbiddenException.class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ErrorResponse handleForbiddenToUser(RuntimeException e) {
-        log.error("403 {}", e.getMessage(), e);
-        return new ErrorResponse("This action is forbidden for user with this id", e.getMessage());
+        return new ErrorResponse(e.getMessage());
     }
 }
