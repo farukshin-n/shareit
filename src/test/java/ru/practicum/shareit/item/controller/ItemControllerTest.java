@@ -160,8 +160,8 @@ public class ItemControllerTest {
                                 .getComments().get(0).getId()), Long.class)
                 )
                 .andExpect(
-                        jsonPath("$.comments[0].text", is(paradiseWithCommentsAndBookings.
-                                getComments().get(0).getText()))
+                        jsonPath("$.comments[0].text", is(paradiseWithCommentsAndBookings
+                                .getComments().get(0).getText()))
                 )
                 .andExpect(
                         jsonPath(
