@@ -2,6 +2,7 @@ package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,7 +74,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDto> getUserBookings(long userId, BookingState state) {
+    public List<BookingDto> getUserBookings(long userId, BookingState state, int from, int size) {
         userRepository.findById(userId).orElseThrow(() -> new SubstanceNotFoundException(
                 String.format("There isn't user with id %d in database.", userId)));
         List<Booking> resultList;
@@ -83,41 +84,42 @@ public class BookingServiceImpl implements BookingService {
                 resultList = bookingRepository.findBookingsByBooker_IdAndStatus(
                         userId,
                         BookingStatus.WAITING,
-                        Sort.by(Sort.Direction.DESC, "start")
+                        PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "start"))
                 );
                 break;
             case REJECTED:
                 resultList = bookingRepository.findBookingsByBooker_IdAndStatus(
                         userId,
                         BookingStatus.REJECTED,
-                        Sort.by(Sort.Direction.DESC, "start")
+                        PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "start"))
                 );
                 break;
             case CURRENT:
                 resultList = bookingRepository.findBookingsByBooker_IdAndStartIsBeforeAndEndIsAfter(
                         userId,
                         LocalDateTime.now(),
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "start"))
                 );
                 break;
             case PAST:
                 resultList = bookingRepository.findBookingsByBooker_IdAndEndIsBefore(
                         userId,
                         LocalDateTime.now(),
-                        Sort.by(Sort.Direction.DESC, "start")
+                        PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "start"))
                 );
                 break;
             case FUTURE:
                 resultList = bookingRepository.findBookingsByBooker_IdAndStartIsAfter(
                         userId,
                         LocalDateTime.now(),
-                        Sort.by(Sort.Direction.DESC, "start")
+                        PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "start"))
                 );
                 break;
             case ALL:
                 resultList = bookingRepository.findBookingsByBooker_Id(
                         userId,
-                        Sort.by(Sort.Direction.DESC, "start")
+                        PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "start"))
                 );
                 break;
             default:
@@ -130,7 +132,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDto> getOwnerBookingList(long userId, BookingState state) {
+    public List<BookingDto> getOwnerBookingList(long userId, BookingState state, int from, int size) {
         userRepository.findById(userId).orElseThrow(() -> new SubstanceNotFoundException(
                 String.format("There isn't user with id %d in database.", userId)));
         List<Booking> resultList;
@@ -140,38 +142,37 @@ public class BookingServiceImpl implements BookingService {
                 resultList = bookingRepository.getBookingsByUserItemsWithState(
                         userId,
                         BookingStatus.WAITING,
-                        Sort.by(Sort.Direction.DESC, "start")
+                        PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "start"))
                 );
                 break;
             case REJECTED:
                 resultList = bookingRepository.getBookingsByUserItemsWithState(
                         userId,
                         BookingStatus.REJECTED,
-                        Sort.by(Sort.Direction.DESC, "start")
+                        PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "start"))
                 );
                 break;
             case CURRENT:
                 resultList = bookingRepository.getBookingsByOwnerIdCurrent(
                         userId,
-                        Sort.by(Sort.Direction.DESC, "start")
-                );
+                        PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "start")));
                 break;
             case PAST:
                 resultList = bookingRepository.getBookingsByOwnerIdPast(
                         userId,
-                        Sort.by(Sort.Direction.DESC, "start")
+                        PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "start"))
                 );
                 break;
             case FUTURE:
                 resultList = bookingRepository.getBookingsByOwnerIdFuture(
                         userId,
-                        Sort.by(Sort.Direction.DESC, "start")
+                        PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "start"))
                 );
                 break;
             case ALL:
                 resultList = bookingRepository.getBookingsByOwnerId(
                         userId,
-                        Sort.by(Sort.Direction.DESC, "start")
+                        PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "start"))
                 );
                 break;
             default:
@@ -199,7 +200,7 @@ public class BookingServiceImpl implements BookingService {
             status = BookingStatus.REJECTED;
         }
         if (booking.getStatus() == status) {
-            throw new IllegalArgumentException(String.format("This booking already has status {}.", status));
+            throw new IllegalArgumentException(String.format("This booking already has status %s.", status));
         }
         booking.setStatus(status);
         Booking newBooking = bookingRepository.save(booking);

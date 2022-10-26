@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import ru.practicum.shareit.booking.dto.BookingDtoWithBookerId;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemDtoForRequests;
 import ru.practicum.shareit.item.dto.ItemDtoWithBookingsAndComments;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.request.model.ItemRequest;
@@ -12,6 +13,7 @@ import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserMapper;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 @Component
@@ -52,5 +54,19 @@ public class ItemMapper {
                 lastBooking,
                 nextBooking
         );
+    }
+
+    public static ItemDtoForRequests toItemDtoForRequests(final Item item) {
+        return new ItemDtoForRequests(
+                item.getId(),
+                item.getName(),
+                item.getDescription(),
+                item.isAvailable(),
+                item.getRequest().getId()
+        );
+    }
+
+    public static List<ItemDtoForRequests> toItemDtoForRequestsList(final List<Item> items) {
+        return items.stream().map(ItemMapper::toItemDtoForRequests).collect(Collectors.toList());
     }
 }
