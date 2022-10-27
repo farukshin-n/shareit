@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class BookingServiceImplTest {
@@ -65,7 +66,7 @@ class BookingServiceImplTest {
                 booking.getStart(),
                 booking.getEnd(),
                 item,
-                item.getOwner(),
+                firstUser,
                 BookingStatus.WAITING
         );
         Mockito.when(mockUserRepository.findById(firstUser.getId())).thenReturn(Optional.of(firstUser));
@@ -184,6 +185,9 @@ class BookingServiceImplTest {
         Mockito
                 .when(mockBookingRepository.findById(booking.getId()))
                 .thenReturn(Optional.of(booking));
+        Mockito
+                .when(mockUserRepository.findById(secondUser.getId()))
+                .thenReturn(Optional.of(secondUser));
         BookingDto actual = bookingService.getBooking(secondUser.getId(), booking.getId());
 
         assertEquals(expected, actual);
@@ -235,6 +239,9 @@ class BookingServiceImplTest {
         Mockito
                 .when(mockBookingRepository.findById(booking.getId()))
                 .thenReturn(Optional.of(booking));
+        Mockito
+                .when(mockUserRepository.findById(firstUser.getId()))
+                .thenReturn(Optional.of(firstUser));
         BookingDto actual = bookingService.getBooking(firstUser.getId(), booking.getId());
 
         assertEquals(expected, actual);
@@ -747,11 +754,14 @@ class BookingServiceImplTest {
                 booking.getEnd(),
                 item,
                 firstUser,
-                booking.getStatus()
+                BookingStatus.APPROVED
         );
         Mockito
                 .when(mockBookingRepository.findById(booking.getId()))
                 .thenReturn(Optional.of(booking));
+        lenient()
+                .when(mockBookingRepository.save(booking))
+                .thenReturn(booking);
         BookingDto actual = bookingService.changeBookingStatus(secondUser.getId(), booking.getId(), true);
 
         assertEquals(expected, actual);
@@ -805,7 +815,7 @@ class BookingServiceImplTest {
                 LocalDateTime.now().plusDays(2),
                 item,
                 firstUser,
-                BookingStatus.WAITING
+                BookingStatus.APPROVED
         );
         Mockito
                 .when(mockBookingRepository.findById(booking.getId()))

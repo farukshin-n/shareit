@@ -9,9 +9,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import ru.practicum.shareit.exception.SubstanceNotFoundException;
+import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemDtoForRequests;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.item.service.ItemServiceImpl;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.dto.ItemRequestDtoWithItems;
 import ru.practicum.shareit.request.model.ItemRequest;
@@ -27,12 +29,14 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 public class ItemRequestServiceImplTest {
     private final User firstUser = new User(1L, "Adam", "adam@paradise.com");
     private final UserDto firstUserDto = new UserDto(firstUser.getId(), firstUser.getName(), firstUser.getEmail());
     private final User secondUser = new User(2L, "Eva", "eva@paradise.com");
+    private final UserDto secondUserDto = new UserDto(secondUser.getId(), secondUser.getName(), secondUser.getEmail());
     private final ItemRequest paradiseRequest = new ItemRequest(
             4L,
             "nice garden without people",
@@ -42,7 +46,7 @@ public class ItemRequestServiceImplTest {
     private final ItemRequestDto paradiseRequestDto = new ItemRequestDto(
             paradiseRequest.getId(),
             paradiseRequest.getDescription(),
-            firstUserDto,
+            secondUserDto,
             paradiseRequest.getCreated()
     );
     private final Item paradise = new Item(
@@ -52,6 +56,14 @@ public class ItemRequestServiceImplTest {
             true,
             secondUser,
             paradiseRequest);
+    private final ItemDto paradiseDto = new ItemDto(
+            paradise.getId(),
+            paradise.getName(),
+            paradise.getDescription(),
+            paradise.isAvailable(),
+            secondUserDto,
+            paradiseRequest.getId()
+    );
     private final ItemDtoForRequests paradiseForRequests = new ItemDtoForRequests(
             paradise.getId(),
             paradise.getName(),
@@ -59,7 +71,7 @@ public class ItemRequestServiceImplTest {
             paradise.isAvailable(),
             paradise.getRequest().getId()
     );
-    private final ItemRequestDtoWithItems tableRequestWithAnswers = new ItemRequestDtoWithItems(
+    private final ItemRequestDtoWithItems paradiseRequestWithItems = new ItemRequestDtoWithItems(
             paradiseRequest.getId(),
             paradiseRequest.getDescription(),
             paradiseRequest.getCreated(),
@@ -73,15 +85,18 @@ public class ItemRequestServiceImplTest {
     UserRepository mockUserRepository;
     @InjectMocks
     ItemRequestServiceImpl itemRequestService;
+    @InjectMocks
+    ItemServiceImpl itemService;
 
     @Test
     void handleAddRequest_byDefault() {
+        lenient()
+                .when(mockUserRepository.findById(secondUser.getId()))
+                .thenReturn(Optional.of(secondUser));
         Mockito
-                .when(mockUserRepository.findById(firstUser.getId()))
-                .thenReturn(Optional.of(firstUser));
-        Mockito
-                .when(mockRequestRepository.save(any())).thenReturn(paradiseRequest);
-        ItemRequestDto actual = itemRequestService.addRequest(firstUser.getId(), paradiseRequestDto);
+                .when(mockRequestRepository.save(any()))
+                .thenReturn(paradiseRequest);
+        ItemRequestDto actual = itemRequestService.addRequest(secondUser.getId(), paradiseRequestDto);
 
         assertEquals(paradiseRequestDto, actual);
     }
@@ -109,7 +124,7 @@ public class ItemRequestServiceImplTest {
                 .thenReturn(List.of(paradise));
         List<ItemRequestDtoWithItems> actual = itemRequestService.getRequests(firstUser.getId());
 
-        assertEquals(List.of(tableRequestWithAnswers), actual);
+        assertEquals(List.of(paradiseRequestWithItems), actual);
     }
 
     @Test
@@ -136,7 +151,7 @@ public class ItemRequestServiceImplTest {
                 .thenReturn(List.of(paradise));
         List<ItemRequestDtoWithItems> actual = itemRequestService.getAllRequests(secondUser.getId(), 0, 1);
 
-        assertEquals(List.of(tableRequestWithAnswers), actual);
+        assertEquals(List.of(paradiseRequestWithItems), actual);
     }
 
     @Test
@@ -152,7 +167,7 @@ public class ItemRequestServiceImplTest {
                 .thenReturn(List.of(paradise));
         ItemRequestDtoWithItems actual = itemRequestService.getRequest(firstUser.getId(), paradiseRequest.getId());
 
-        assertEquals(tableRequestWithAnswers, actual);
+        assertEquals(paradiseRequestWithItems, actual);
     }
 
     @Test

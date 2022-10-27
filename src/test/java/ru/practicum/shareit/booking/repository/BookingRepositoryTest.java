@@ -9,9 +9,10 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlGroup;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
-import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -21,42 +22,48 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @DataJpaTest
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
 @SqlGroup({
         @Sql(value = {"booking-repository-test-before.sql"}, executionPhase = BEFORE_TEST_METHOD),
         @Sql(value = {"booking-repository-test-after.sql"}, executionPhase = AFTER_TEST_METHOD)
 })
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class BookingRepositoryTest {
     private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
     private final User firstUser = new User(1L, "Adam", "adam@paradise.com");
     private final User secondUser = new User(2L, "Eva", "eva@paradise.com");
+    private final ItemRequest request = new ItemRequest(
+            4L,
+            "great garden without people",
+            secondUser,
+            LocalDateTime.of(2022, 10, 10, 12, 0));
     private final Item paradise = new Item(3L,
             "Paradise",
             "great garden without people",
             true,
             firstUser,
-            null);
+            request);
     private final Booking booking = new Booking(
             4L,
-            LocalDateTime.of(2021, 10, 20, 12, 30),
-            LocalDateTime.of(2021, 10, 21, 13, 35),
+            LocalDateTime.of(2023, 10, 20, 12, 30),
+            LocalDateTime.of(2023, 10, 21, 13, 35),
             paradise,
-            firstUser,
+            secondUser,
             BookingStatus.WAITING);
     private final Item apple = new Item(5L, "Apple", "very tasty fruit", true, secondUser, null);
     private final Booking bookingCurrent = new Booking(
             7L,
-            LocalDateTime.of(2022, 10, 20, 12, 30),
-            LocalDateTime.of(2022, 10, 21, 13, 35),
+            LocalDateTime.of(2022, 10, 25, 12, 30),
+            LocalDateTime.of(2022, 10, 30, 13, 35),
             apple,
-            secondUser,
+            firstUser,
             BookingStatus.WAITING);
     private final Booking bookingPast = new Booking(
             6L,
-            LocalDateTime.of(2021, 10, 23, 12, 35),
-            LocalDateTime.of(2021, 10, 24, 13, 0),
+            LocalDateTime.of(2021, 10, 27, 12, 35),
+            LocalDateTime.of(2021, 10, 28, 13, 0),
             apple,
-            secondUser,
+            firstUser,
             BookingStatus.WAITING);
     private final Set<Long> setIds = Set.of(4L, 6L, 7L);
 

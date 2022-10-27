@@ -12,6 +12,7 @@ import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.booking.service.BookingMapper;
+import ru.practicum.shareit.exception.CommentFromUserWithoutBookingException;
 import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.exception.SubstanceNotFoundException;
 import ru.practicum.shareit.item.dto.CommentDto;
@@ -34,9 +35,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 public class ItemServiceImplTest {
+    private final Set<Long> itemIds = new HashSet<>(Arrays.asList(6L, 7L));
     private final User firstUser = new User(1L, "Adam", "adam@paradise.com");
     private final UserDto firstUserDto = new UserDto(firstUser.getId(), firstUser.getName(), firstUser.getEmail());
     private final User secondUser = new User(2L, "Eva", "eva@paradise.com");
@@ -47,11 +50,12 @@ public class ItemServiceImplTest {
             secondUser,
             LocalDateTime.of(2022, 10, 24, 12, 30, 0)
     );
-    private final Item paradise = new Item(3L,
+    private final Item paradise = new Item(
+            3L,
             "Paradise",
             "great garden without people",
             true,
-            firstUser,
+            secondUser,
             paradiseRequest);
     private final ItemDto paradiseDto = new ItemDto(
             paradise.getId(),
@@ -178,16 +182,27 @@ public class ItemServiceImplTest {
     @Test
     void handleGetItemDtoWithBookingsAndComments_byDefault() {
         Mockito
-                .when(mockItemRepository.findById(paradise.getId())).thenReturn(Optional.of(paradise));
+                .when(mockItemRepository.findById(paradise.getId()))
+                .thenReturn(Optional.of(paradise));
+        Mockito
+                .when(mockUserRepository.existsById(secondUser.getId()))
+                .thenReturn(true);
+        Mockito
+                .when(mockBookingRepository.getPastOrCurrentBookingByItemId(paradise.getId()))
+                .thenReturn(Optional.of(lastBooking));
+        Mockito
+                .when(mockBookingRepository.getFutureBookingByItemId(paradise.getId()))
+                .thenReturn(Optional.of(nextBooking));
+
         ItemDtoWithBookingsAndComments actual = itemService.getItemDtoWithBookingsAndComments(
-                firstUser.getId(), paradise.getId());
+                secondUser.getId(), paradise.getId());
 
         assertEquals(paradiseDtoWithBookingsAndComments, actual);
     }
 
     @Test
     void handleGetItemDtoWithBookingsAndComments_ItemNotExist() {
-        Mockito
+        lenient()
                 .when(mockItemRepository.findById(54L))
                 .thenReturn(Optional.empty());
 
@@ -204,7 +219,7 @@ public class ItemServiceImplTest {
                 paradise.getName(),
                 paradise.getDescription(),
                 paradise.isAvailable(),
-                firstUserDto,
+                secondUserDto,
                 paradise.getRequest().getId(),
                 new ArrayList<>(),
                 new BookingDtoWithBookerId(
@@ -215,20 +230,23 @@ public class ItemServiceImplTest {
                         firstUser.getId(),
                         BookingStatus.APPROVED
                 ),new BookingDtoWithBookerId(
-                7L,
-                LocalDateTime.of(2022, 10, 23, 12, 35),
-                LocalDateTime.of(2022, 10, 24, 13, 0),
-                paradiseDto,
-                firstUser.getId(),
-                BookingStatus.APPROVED)
+                        7L,
+                        LocalDateTime.of(2022, 10, 23, 12, 35),
+                        LocalDateTime.of(2022, 10, 24, 13, 0),
+                        paradiseDto,
+                        firstUser.getId(),
+                        BookingStatus.APPROVED)
         );
+        lenient()
+                .when(mockUserRepository.existsById(secondUserDto.getId()))
+                .thenReturn(true);
         Mockito
                 .when(mockItemRepository.findById(paradise.getId())).thenReturn(Optional.of(paradise));
         Mockito
                 .when(mockBookingRepository.getPastOrCurrentBookingByItemId(paradiseDto.getId()))
                 .thenReturn(Optional.of(lastBooking));
         Mockito
-                .when(mockBookingRepository.getFutureBookingByItemId(paradise.getId()))
+                .when(mockBookingRepository.getFutureBookingByItemId(paradiseDto.getId()))
                 .thenReturn(Optional.of(nextBooking));
         Mockito
                 .when(mockCommentRepository.findCommentsByItem_Id(paradiseDto.getId()))
@@ -255,7 +273,12 @@ public class ItemServiceImplTest {
                 null,
                 null
         );
-        Mockito.when(mockItemRepository.findById(paradise.getId())).thenReturn(Optional.of(paradise));
+        lenient()
+                .when(mockUserRepository.existsById(firstUserDto.getId()))
+                .thenReturn(true);
+        Mockito
+                .when(mockItemRepository.findById(paradise.getId()))
+                .thenReturn(Optional.of(paradise));
         Mockito
                 .when(mockCommentRepository.findCommentsByItem_Id(paradise.getId()))
                 .thenReturn(Collections.emptyList());
@@ -272,39 +295,19 @@ public class ItemServiceImplTest {
         Mockito
                 .when(mockItemRepository.findByOwnerIdOrderById(secondUser.getId(), PageRequest.of(0, 1)))
                 .thenReturn(List.of(paradise));
-        Mockito
-                .when(mockCommentRepository.findCommentsByItem_Id(paradise.getId()))
-                .thenReturn(Collections.emptyList());
-        Mockito
-                .when(mockBookingRepository.getPastOrCurrentBookingByItemId(paradise.getId()))
-                .thenReturn(Optional.of(lastBooking));
-        Mockito
-                .when(mockBookingRepository.getFutureBookingByItemId(paradise.getId()))
-                .thenReturn(Optional.of(nextBooking));
+        lenient()
+                .when(mockBookingRepository.getBookingsByItem_IdInOrderByEndAsc(itemIds))
+                .thenReturn(List.of(lastBooking, nextBooking));
         ItemDtoWithBookingsAndComments expected = new ItemDtoWithBookingsAndComments(
                 paradise.getId(),
                 paradise.getName(),
                 paradise.getDescription(),
                 paradise.isAvailable(),
-                firstUserDto,
+                secondUserDto,
                 paradise.getRequest().getId(),
                 new ArrayList<>(),
-                new BookingDtoWithBookerId(
-                        6L,
-                        LocalDateTime.of(2022, 10, 20, 12, 30),
-                        LocalDateTime.of(2022, 10, 21, 13, 35),
-                        paradiseDto,
-                        firstUser.getId(),
-                        BookingStatus.APPROVED
-                ),new BookingDtoWithBookerId(
-                7L,
-                LocalDateTime.of(2022, 10, 23, 12, 35),
-                LocalDateTime.of(2022, 10, 24, 13, 0),
-                paradiseDto,
-                firstUser.getId(),
-                BookingStatus.APPROVED
-        )
-
+                null,
+                null
         );
         List<ItemDtoWithBookingsAndComments> actual = itemService.getAllItemsByUserId(secondUser.getId(), 0, 1);
 
@@ -336,6 +339,9 @@ public class ItemServiceImplTest {
         Mockito
                 .when(mockItemRepository.findById(figLeaf.getId()))
                 .thenReturn(Optional.of(figLeaf));
+        Mockito
+                .when(mockItemRepository.save(figLeaf))
+                .thenReturn(figLeaf);
         ItemDto actual = itemService.updateItem(firstUser.getId(), figLeaf.getId(), update);
 
         assertEquals(expected, actual);
@@ -366,6 +372,9 @@ public class ItemServiceImplTest {
         Mockito
                 .when(mockItemRepository.findById(figLeaf.getId()))
                 .thenReturn(Optional.of(figLeaf));
+        Mockito
+                .when(mockItemRepository.save(figLeaf))
+                .thenReturn(figLeaf);
         ItemDto actual = itemService.updateItem(firstUser.getId(), figLeaf.getId(), update);
 
         assertEquals(expected, actual);
@@ -528,7 +537,7 @@ public class ItemServiceImplTest {
                 .thenReturn(Collections.emptyList());
 
         assertThrows(
-                ForbiddenException.class,
+                CommentFromUserWithoutBookingException.class,
                 () -> itemService.addComment(firstUser.getId(), paradise.getId(), commentDto)
         );
     }

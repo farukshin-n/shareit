@@ -14,6 +14,7 @@ import javax.validation.constraints.Size;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
+@EqualsAndHashCode
 public class ItemDto {
     private Long id;
     @NotBlank(groups = {Create.class}, message = "Name cannot be blank.")

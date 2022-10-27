@@ -30,7 +30,8 @@ public class UserServiceImplTest {
     @Test
     void handleAddUser_byDefault() {
         Mockito
-                .when(mockUserRepository.save(any())).thenReturn(testUser);
+                .when(mockUserRepository.save(any()))
+                .thenReturn(testUser);
         UserDto user = userService.addUser(testUserDto);
 
         assertNotNull(user);
@@ -66,12 +67,16 @@ public class UserServiceImplTest {
     @Test
     void handleUpdateUser_byDefault() {
         User sam = new User(2L, "Sam", "sam@gmail.com");
-        UserDto updatedSam = new UserDto(sam.getId(), "samuel", "secondUserson@gmail.com");
-        UserDto samDto = new UserDto(sam.getId(), updatedSam.getName(), updatedSam.getEmail());
+        UserDto samToUpdate = new UserDto(sam.getId(), "samuel", "secondUserson@gmail.com");
+        User updatedSam = new User(sam.getId(), samToUpdate.getName(), samToUpdate.getEmail());
+        UserDto samDto = new UserDto(sam.getId(), samToUpdate.getName(), samToUpdate.getEmail());
         Mockito
                 .when(mockUserRepository.findById(sam.getId()))
                 .thenReturn(Optional.of(sam));
-        UserDto actualSam = userService.updateUser(sam.getId(), updatedSam);
+        Mockito
+                .when(mockUserRepository.save(sam))
+                .thenReturn(updatedSam);
+        UserDto actualSam = userService.updateUser(sam.getId(), samToUpdate);
 
         assertEquals(samDto, actualSam);
     }
@@ -80,9 +85,14 @@ public class UserServiceImplTest {
     void handleUpdateUser_withNullsInUpdate() {
         User sam = new User(2L, "Sam", "sam@gmail.com");
         UserDto samsecondUserson = new UserDto(sam.getId(), sam.getName(), sam.getEmail());
-        UserDto updateSam = new UserDto(sam.getId(), null, null);
-        Mockito.when(mockUserRepository.findById(sam.getId())).thenReturn(Optional.of(sam));
-        UserDto user = userService.updateUser(sam.getId(), updateSam);
+        UserDto updatedSam = new UserDto(sam.getId(), null, null);
+        Mockito
+                .when(mockUserRepository.findById(sam.getId()))
+                .thenReturn(Optional.of(sam));
+        Mockito
+                .when(mockUserRepository.save(sam))
+                .thenReturn(sam);
+        UserDto user = userService.updateUser(sam.getId(), updatedSam);
 
         assertEquals(samsecondUserson, user);
     }
@@ -92,6 +102,7 @@ public class UserServiceImplTest {
         UserDto samsecondUserson = new UserDto(null, "samuel", "secondUserson@gmail.com");
         Mockito
                 .when(mockUserRepository.findById(59L)).thenReturn(Optional.empty());
+
         assertThrows(SubstanceNotFoundException.class, () -> userService.updateUser(59L, samsecondUserson));
     }
 

@@ -12,8 +12,10 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode
+@ToString
 public class ItemRequestDto {
-    private long id;
+    private Long id;
     @Size(max = 200,
             message = "Description cannot be longer than 200 characters.",
             groups = {Create.class})

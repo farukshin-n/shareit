@@ -35,8 +35,8 @@ class BookingControllerTest {
     private final Item paradise = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
     private final BookingDto bookingDto = new BookingDto(
             4L,
-            LocalDateTime.of(2021, 10, 20, 12, 30),
-            LocalDateTime.of(2021, 10, 21, 13, 35),
+            LocalDateTime.of(2023, 10, 20, 12, 30),
+            LocalDateTime.of(2023, 10, 21, 13, 35),
             paradise,
             firstUser,
             BookingStatus.WAITING
@@ -49,13 +49,13 @@ class BookingControllerTest {
             bookingDto.getBooker(),
             BookingStatus.APPROVED
     );
-    private final InputBookingDto newBookingDto = new InputBookingDto(
+    private final InputBookingDto inputBookingDto = new InputBookingDto(
             bookingDto.getStart(),
             bookingDto.getEnd(),
             bookingDto.getBooker().getId()
     );
-    private final String startDate = "2021-10-20T12:30:00";
-    private final String endDate = "2021-10-21T13:35:00";
+    private final String startDate = "2023-10-20T12:30:00";
+    private final String endDate = "2023-10-21T13:35:00";
     @Autowired
     ObjectMapper mapper;
     @MockBean
@@ -64,7 +64,7 @@ class BookingControllerTest {
     private MockMvc mvc;
 
     @Test
-    void addBooking() throws Exception {
+    void handleAddBooking_byDefault() throws Exception {
         Mockito
                 .when(bookingService.addBooking(anyLong(), any()))
                 .thenReturn(bookingDto);
@@ -72,7 +72,7 @@ class BookingControllerTest {
         mvc.perform(
                         post("/bookings")
                                 .header("X-Sharer-User-Id", firstUser.getId())
-                                .content(mapper.writeValueAsString(newBookingDto))
+                                .content(mapper.writeValueAsString(inputBookingDto))
                                 .characterEncoding(StandardCharsets.UTF_8)
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -97,15 +97,15 @@ class BookingControllerTest {
         mvc.perform(
                         post("/bookings")
                                 .header("X-Sharer-User-Id", firstUser.getId())
-                                .content(mapper.writeValueAsString(newBookingDto))
+                                .content(mapper.writeValueAsString(inputBookingDto))
                                 .characterEncoding(StandardCharsets.UTF_8)
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void addBooking_withItemUnavailable() throws Exception {
+    void handleAddBooking_withItemUnavailable() throws Exception {
         Mockito
                 .when(bookingService.addBooking(anyLong(), any()))
                 .thenThrow(new NotAvailableException(
@@ -115,7 +115,7 @@ class BookingControllerTest {
         mvc.perform(
                         post("/bookings")
                                 .header("X-Sharer-User-Id", firstUser.getId())
-                                .content(mapper.writeValueAsString(newBookingDto))
+                                .content(mapper.writeValueAsString(inputBookingDto))
                                 .characterEncoding(StandardCharsets.UTF_8)
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -133,11 +133,11 @@ class BookingControllerTest {
         mvc.perform(
                         post("/bookings")
                                 .header("X-Sharer-User-Id", secondUser.getId())
-                                .content(mapper.writeValueAsString(newBookingDto))
+                                .content(mapper.writeValueAsString(inputBookingDto))
                                 .characterEncoding(StandardCharsets.UTF_8)
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound());
     }
 
     @Test

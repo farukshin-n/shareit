@@ -10,7 +10,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 public class ItemRequestDtoWithItems {
-    private long id;
+    private Long id;
     private String description;
     private LocalDateTime created;
     private List<ItemDtoForRequests> items;
