@@ -209,7 +209,7 @@ public class BookingServiceImpl implements BookingService {
 
     private void validateStartEndOfBooking(InputBookingDto inputBookingDto) {
         if (inputBookingDto.getStart().isAfter(inputBookingDto.getEnd())) {
-            throw new IllegalStartEndOfBookingException("Start of booking cannot ba after its end.");
+            throw new IllegalArgumentException("Start of booking cannot ba after its end.");
         }
     }
 }

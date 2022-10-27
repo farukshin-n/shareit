@@ -10,8 +10,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @Slf4j
 @RestControllerAdvice
 public class ErrorHandler {
-    @ExceptionHandler({NotAvailableException.class, IllegalStartEndOfBookingException.class,
-            CommentFromUserWithoutBookingException.class, IllegalArgumentException.class})
+    @ExceptionHandler({NotAvailableException.class, IllegalArgumentException.class,
+            IllegalArgumentException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleNotAvailableCases(RuntimeException e) {
         log.error("400 {}", e.getMessage(), e);
