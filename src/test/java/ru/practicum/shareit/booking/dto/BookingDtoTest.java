@@ -40,7 +40,7 @@ public class BookingDtoTest {
         assertThat(result).extractingJsonPathValue("$.start").isEqualTo(bookingDto.getStart().toString());
         assertThat(result).extractingJsonPathValue("$.end").isEqualTo(bookingDto.getEnd().toString());
         assertThat(result).extractingJsonPathNumberValue("$.item.id")
-                .isEqualTo(bookingDto.getItem().getId().intValue());
+                .isEqualTo(bookingDto.getItem().getId());
         assertThat(result).extractingJsonPathValue("$.item.name")
                 .isEqualTo(bookingDto.getItem().getName());
         assertThat(result).extractingJsonPathValue("$.item.description")

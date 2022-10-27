@@ -12,7 +12,6 @@ import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -29,7 +28,6 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 class BookingRepositoryTest {
     private final BookingRepository bookingRepository;
-    private final UserRepository userRepository;
     private final User firstUser = new User(1L, "Adam", "adam@paradise.com");
     private final User secondUser = new User(2L, "Eva", "eva@paradise.com");
     private final ItemRequest request = new ItemRequest(
@@ -65,13 +63,18 @@ class BookingRepositoryTest {
             apple,
             firstUser,
             BookingStatus.WAITING);
-    private final Set<Long> setIds = Set.of(4L, 6L, 7L);
+    private final Set<Long> setIds = Set.of(3L, 5L);
 
     @Test
     void handleGetBookingsByOwnerId() {
         List<Booking> result = bookingRepository.getBookingsByOwnerId(firstUser.getId(), Pageable.unpaged());
 
-        assertThat(result).isNotEmpty().hasSameElementsAs(List.of(booking));
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getId()).isEqualTo(booking.getId());
+        assertThat(result.get(0).getStart()).isEqualTo(booking.getStart());
+        assertThat(result.get(0).getEnd()).isEqualTo(booking.getEnd());
+        assertThat(result.get(0).getBooker()).isEqualTo(booking.getBooker());
+        assertThat(result.get(0).getStatus()).isEqualTo(booking.getStatus());
     }
 
     @Test
@@ -82,35 +85,57 @@ class BookingRepositoryTest {
                 Pageable.unpaged()
         );
 
-        assertThat(result).isNotEmpty().hasSameElementsAs(List.of(booking));
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getId()).isEqualTo(booking.getId());
+        assertThat(result.get(0).getStart()).isEqualTo(booking.getStart());
+        assertThat(result.get(0).getEnd()).isEqualTo(booking.getEnd());
+        assertThat(result.get(0).getBooker()).isEqualTo(booking.getBooker());
+        assertThat(result.get(0).getStatus()).isEqualTo(booking.getStatus());
     }
 
     @Test
     void handleGetBookingsByOwnerIdCurrent() {
         List<Booking> result = bookingRepository.getBookingsByOwnerIdCurrent(secondUser.getId(), Pageable.unpaged());
 
-        assertThat(result).isNotEmpty().hasSameElementsAs(List.of(bookingCurrent));
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getId()).isEqualTo(bookingCurrent.getId());
+        assertThat(result.get(0).getStart()).isEqualTo(bookingCurrent.getStart());
+        assertThat(result.get(0).getEnd()).isEqualTo(bookingCurrent.getEnd());
+        assertThat(result.get(0).getStatus()).isEqualTo(bookingCurrent.getStatus());
     }
 
     @Test
     void handleGetBookingsByOwnerIdPast() {
         List<Booking> result = bookingRepository.getBookingsByOwnerIdPast(secondUser.getId(), Pageable.unpaged());
 
-        assertThat(result).isNotEmpty().hasSameElementsAs(List.of(bookingPast));
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getId()).isEqualTo(bookingPast.getId());
+        assertThat(result.get(0).getStart()).isEqualTo(bookingPast.getStart());
+        assertThat(result.get(0).getEnd()).isEqualTo(bookingPast.getEnd());
+        assertThat(result.get(0).getStatus()).isEqualTo(bookingPast.getStatus());
     }
 
     @Test
     void handleGetBookingsByOwnerIdFuture() {
         List<Booking> result = bookingRepository.getBookingsByOwnerIdFuture(firstUser.getId(), Pageable.unpaged());
 
-        assertThat(result).isNotEmpty().hasSameElementsAs(List.of(booking));
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getId()).isEqualTo(booking.getId());
+        assertThat(result.get(0).getStart()).isEqualTo(booking.getStart());
+        assertThat(result.get(0).getEnd()).isEqualTo(booking.getEnd());
+        assertThat(result.get(0).getBooker()).isEqualTo(booking.getBooker());
+        assertThat(result.get(0).getStatus()).isEqualTo(booking.getStatus());
     }
 
     @Test
     void handleGetPastOrCurrentBookingByItemId() {
         Optional<Booking> result = bookingRepository.getPastOrCurrentBookingByItemId(apple.getId());
 
-        assertThat(result).isNotEmpty().isEqualTo(Optional.of(bookingCurrent));
+        assertThat(result).isNotEmpty();
+        assertThat(result.get().getId()).isEqualTo(bookingCurrent.getId());
+        assertThat(result.get().getStart()).isEqualTo(bookingCurrent.getStart());
+        assertThat(result.get().getEnd()).isEqualTo(bookingCurrent.getEnd());
+        assertThat(result.get().getStatus()).isEqualTo(bookingCurrent.getStatus());
     }
 
     @Test
@@ -118,46 +143,66 @@ class BookingRepositoryTest {
         List<Booking> result = bookingRepository.getBookingsByItem_IdInOrderByEndAsc(setIds);
 
         assertThat(result).isNotEmpty();
-        assertThat(result.get(0)).isEqualTo(booking);
-        assertThat(result.get(1)).isEqualTo(bookingPast);
-        assertThat(result.get(2)).isEqualTo(bookingCurrent);
+        assertThat(result.get(0).getId()).isEqualTo(bookingPast.getId());
+        assertThat(result.get(1).getId()).isEqualTo(bookingCurrent.getId());
+        assertThat(result.get(2).getId()).isEqualTo(booking.getId());
     }
 
     @Test
     void handleGetFutureBookingByItemId() {
         Optional<Booking> result = bookingRepository.getFutureBookingByItemId(paradise.getId());
 
-        assertThat(result).isPresent().isEqualTo(Optional.of(booking));
+        assertThat(result).isNotEmpty();
+        assertThat(result.get().getId()).isEqualTo(booking.getId());
+        assertThat(result.get().getStart()).isEqualTo(booking.getStart());
+        assertThat(result.get().getEnd()).isEqualTo(booking.getEnd());
+        assertThat(result.get().getBooker()).isEqualTo(booking.getBooker());
+        assertThat(result.get().getStatus()).isEqualTo(booking.getStatus());
     }
 
     @Test
     void handleFindBookingsByBooker_Id() {
         List<Booking> result = bookingRepository.findBookingsByBooker_Id(secondUser.getId(), Pageable.unpaged());
-
-        assertThat(result).isNotEmpty().hasSameElementsAs(List.of(booking));
+        // or first?
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getId()).isEqualTo(booking.getId());
+        assertThat(result.get(0).getStart()).isEqualTo(booking.getStart());
+        assertThat(result.get(0).getEnd()).isEqualTo(booking.getEnd());
+        assertThat(result.get(0).getBooker()).isEqualTo(booking.getBooker());
+        assertThat(result.get(0).getStatus()).isEqualTo(booking.getStatus());
     }
 
     @Test
     void handleFindBookingsByBooker_IdAndStartIsBeforeAndEndIsAfter() {
         List<Booking> result = bookingRepository.findBookingsByBooker_IdAndStartIsBeforeAndEndIsAfter(
                 secondUser.getId(),
-                LocalDateTime.of(2021, 10, 20, 18, 30, 0),
-                LocalDateTime.of(2021, 10, 20, 19, 30, 0),
+                LocalDateTime.of(2023, 10, 25, 18, 30, 0),
+                LocalDateTime.of(2023, 10, 20, 19, 30, 0),
                 Pageable.unpaged()
         );
 
-        assertThat(result).isNotEmpty().hasSameElementsAs(List.of(booking));
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getId()).isEqualTo(booking.getId());
+        assertThat(result.get(0).getStart()).isEqualTo(booking.getStart());
+        assertThat(result.get(0).getEnd()).isEqualTo(booking.getEnd());
+        assertThat(result.get(0).getBooker()).isEqualTo(booking.getBooker());
+        assertThat(result.get(0).getStatus()).isEqualTo(booking.getStatus());
     }
 
     @Test
     void handleFindBookingsByBooker_IdAndEndIsBefore() {
         List<Booking> result = bookingRepository.findBookingsByBooker_IdAndEndIsBefore(
                 secondUser.getId(),
-                LocalDateTime.of(2021, 10, 22, 12, 30, 0),
+                LocalDateTime.of(2024, 10, 22, 12, 30, 0),
                 Pageable.unpaged()
         );
 
-        assertThat(result).isNotEmpty().hasSameElementsAs(List.of(booking));
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getId()).isEqualTo(booking.getId());
+        assertThat(result.get(0).getStart()).isEqualTo(booking.getStart());
+        assertThat(result.get(0).getEnd()).isEqualTo(booking.getEnd());
+        assertThat(result.get(0).getBooker()).isEqualTo(booking.getBooker());
+        assertThat(result.get(0).getStatus()).isEqualTo(booking.getStatus());
     }
 
     @Test
@@ -168,7 +213,12 @@ class BookingRepositoryTest {
                 Pageable.unpaged()
         );
 
-        assertThat(result).isNotEmpty().hasSameElementsAs(List.of(booking));
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getId()).isEqualTo(booking.getId());
+        assertThat(result.get(0).getStart()).isEqualTo(booking.getStart());
+        assertThat(result.get(0).getEnd()).isEqualTo(booking.getEnd());
+        assertThat(result.get(0).getBooker()).isEqualTo(booking.getBooker());
+        assertThat(result.get(0).getStatus()).isEqualTo(booking.getStatus());
     }
 
     @Test
@@ -179,7 +229,12 @@ class BookingRepositoryTest {
                 Pageable.unpaged()
         );
 
-        assertThat(result).isNotEmpty().hasSameElementsAs(List.of(booking));
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getId()).isEqualTo(booking.getId());
+        assertThat(result.get(0).getStart()).isEqualTo(booking.getStart());
+        assertThat(result.get(0).getEnd()).isEqualTo(booking.getEnd());
+        assertThat(result.get(0).getBooker()).isEqualTo(booking.getBooker());
+        assertThat(result.get(0).getStatus()).isEqualTo(booking.getStatus());
     }
 
     @Test
@@ -187,9 +242,14 @@ class BookingRepositoryTest {
         List<Booking> result = bookingRepository.findBookingsByItem_IdAndBooker_IdAndEndIsBefore(
                 paradise.getId(),
                 secondUser.getId(),
-                LocalDateTime.of(2021, 10, 22, 13, 35)
+                LocalDateTime.of(2024, 10, 22, 13, 35)
         );
 
-        assertThat(result).isNotEmpty().hasSameElementsAs(List.of(booking));
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getId()).isEqualTo(booking.getId());
+        assertThat(result.get(0).getStart()).isEqualTo(booking.getStart());
+        assertThat(result.get(0).getEnd()).isEqualTo(booking.getEnd());
+        assertThat(result.get(0).getBooker()).isEqualTo(booking.getBooker());
+        assertThat(result.get(0).getStatus()).isEqualTo(booking.getStatus());
     }
 }
