@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface ItemRequestRepository extends JpaRepository<ItemRequest, Long> {
-    List<ItemRequest> findByRequesterIdOrderByCreatedDesc(long id);
+    List<ItemRequest> findByRequesterIdOrderByCreatedDesc(long requestId);
 
-    List<ItemRequest> findByRequesterIdNot(long id, Pageable pageable);
+    List<ItemRequest> findByRequesterIdNot(long requestId, Pageable pageable);
 }

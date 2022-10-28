@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Entity
 @Table(name = "comments")
-@EqualsAndHashCode
 @ToString
 public class Comment {
     @Id

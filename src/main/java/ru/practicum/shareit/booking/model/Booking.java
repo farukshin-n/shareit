@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @ToString
 @Entity
 @Table(name = "bookings")
-@EqualsAndHashCode
 public class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

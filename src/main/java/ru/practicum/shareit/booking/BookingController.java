@@ -50,8 +50,8 @@ public class BookingController {
     public List<BookingDto> getUserBookings(
             @RequestHeader("X-Sharer-User-Id") long id,
             @RequestParam(required = false, defaultValue = "ALL") BookingState state,
-            @RequestParam(defaultValue = "0") @PositiveOrZero final int from,
-            @RequestParam(defaultValue = "100") @Positive final int size) {
+            @RequestParam(defaultValue = "0") @PositiveOrZero int from,
+            @RequestParam(defaultValue = "100") @Positive int size) {
         return service.getUserBookings(id, state, from, size);
     }
 
@@ -59,8 +59,8 @@ public class BookingController {
     public List<BookingDto> getUserBookedItems(
             @RequestHeader("X-Sharer-User-Id") long id,
             @RequestParam(required = false, defaultValue = "ALL") BookingState state,
-            @RequestParam(defaultValue = "0") @PositiveOrZero final int from,
-            @RequestParam(defaultValue = "100") @Positive final int size) {
+            @RequestParam(defaultValue = "0") @PositiveOrZero int from,
+            @RequestParam(defaultValue = "100") @Positive int size) {
         return service.getOwnerBookingList(id, state, from, size);
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.shareit.booking.BookingController;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.InputBookingDto;
+import ru.practicum.shareit.booking.model.BookingState;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.exception.NotAvailableException;
@@ -57,9 +58,9 @@ class BookingControllerTest {
     private final String startDate = "2023-10-20T12:30:00";
     private final String endDate = "2023-10-21T13:35:00";
     @Autowired
-    ObjectMapper mapper;
+    private ObjectMapper mapper;
     @MockBean
-    BookingService bookingService;
+    private BookingService bookingService;
     @Autowired
     private MockMvc mvc;
 
@@ -85,6 +86,10 @@ class BookingControllerTest {
                 .andExpect(jsonPath("$.booker.id", is(bookingDto.getBooker().getId()), Long.class))
                 .andExpect(jsonPath("$.booker.name", is(bookingDto.getBooker().getName())))
                 .andExpect(jsonPath("$.status", is(bookingDto.getStatus().name())));
+
+        Mockito
+                .verify(bookingService, Mockito.times(1))
+                .addBooking(1L, inputBookingDto);
     }
 
     @Test
@@ -162,6 +167,9 @@ class BookingControllerTest {
                 .andExpect(jsonPath("$.booker.id", is(approved.getBooker().getId()), Long.class))
                 .andExpect(jsonPath("$.booker.name", is(approved.getBooker().getName())))
                 .andExpect(jsonPath("$.status", is(approved.getStatus().name())));
+
+        Mockito.verify(bookingService, Mockito.times(1))
+                .changeBookingStatus(2L, 4L, true);
     }
 
     @Test
@@ -185,6 +193,9 @@ class BookingControllerTest {
                 .andExpect(jsonPath("$.booker.id", is(bookingDto.getBooker().getId()), Long.class))
                 .andExpect(jsonPath("$.booker.name", is(bookingDto.getBooker().getName())))
                 .andExpect(jsonPath("$.status", is(bookingDto.getStatus().name())));
+
+        Mockito.verify(bookingService, Mockito.times(1))
+                .getBooking(1L, 4L);
     }
 
     @Test
@@ -211,6 +222,9 @@ class BookingControllerTest {
                 .andExpect(jsonPath("$.[0].booker.id", is(bookingDto.getBooker().getId()), Long.class))
                 .andExpect(jsonPath("$.[0].booker.name", is(bookingDto.getBooker().getName())))
                 .andExpect(jsonPath("$.[0].status", is(bookingDto.getStatus().name())));
+
+        Mockito.verify(bookingService, Mockito.times(1))
+                .getUserBookings(1L, BookingState.ALL, 0, 1);
     }
 
     @Test

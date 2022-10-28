@@ -30,7 +30,7 @@ public class UserControllerTest {
     @Autowired
     private ObjectMapper mapper;
     @MockBean
-    UserService userService;
+    private UserService userService;
     @Autowired
     private MockMvc mvc;
 
@@ -50,6 +50,10 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.id", is(samsecondUserson.getId()), Long.class))
                 .andExpect(jsonPath("$.name", is(samsecondUserson.getName())))
                 .andExpect(jsonPath("$.email", is(samsecondUserson.getEmail())));
+
+
+        Mockito.verify(userService, Mockito.times(1))
+                .addUser(samsecondUserson);
     }
 
     @Test
@@ -67,6 +71,9 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.id", is(samsecondUserson.getId()), Long.class))
                 .andExpect(jsonPath("$.name", is(samsecondUserson.getName())))
                 .andExpect(jsonPath("$.email", is(samsecondUserson.getEmail())));
+
+        Mockito.verify(userService, Mockito.times(1))
+                .getUser(1L);
     }
 
     @Test
@@ -84,6 +91,9 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.[0].id", is(samsecondUserson.getId()), Long.class))
                 .andExpect(jsonPath("$.[0].name", is(samsecondUserson.getName())))
                 .andExpect(jsonPath("$.[0].email", is(samsecondUserson.getEmail())));
+
+        Mockito.verify(userService, Mockito.times(1))
+                .getAllUsers();
     }
 
     @Test
@@ -102,6 +112,9 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.id", is(samsecondUserson.getId()), Long.class))
                 .andExpect(jsonPath("$.name", is(samsecondUserson.getName())))
                 .andExpect(jsonPath("$.email", is(samsecondUserson.getEmail())));
+
+        Mockito.verify(userService, Mockito.times(1))
+                .updateUser(1L, updatesecondUserson);
     }
 
     @Test

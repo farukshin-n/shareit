@@ -66,7 +66,7 @@ public class ItemMapper {
         );
     }
 
-    public static List<ItemDtoForRequests> toItemDtoForRequestsList(final List<Item> items) {
+    public static List<ItemDtoForRequests> toItemDtoForRequestsList(List<Item> items) {
         return items.stream().map(ItemMapper::toItemDtoForRequests).collect(Collectors.toList());
     }
 }

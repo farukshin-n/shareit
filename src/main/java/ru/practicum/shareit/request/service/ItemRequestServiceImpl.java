@@ -39,7 +39,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                         String.format("There isn't user with id %d in database.", userId)));
         ItemRequest itemRequest = ItemRequestMapper.dtoToItemRequest(itemRequestDto, user);
         ItemRequest newItemRequest = itemRequestRepository.save(itemRequest);
-        log.info(String.format("New itemrequest with id %d created successfully.", newItemRequest.getId()));
+        log.info("New itemrequest with id {} created successfully.", newItemRequest.getId());
 
         return  ItemRequestMapper.itemRequestToDto(newItemRequest);
     }
@@ -48,23 +48,19 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     public List<ItemRequestDtoWithItems> getRequests(long userId) {
         final User user = userRepository.findById(userId).orElseThrow(() -> new SubstanceNotFoundException(
                 String.format("There isn't user with id %d in database.", userId)));
+        List<ItemRequest> requests = itemRequestRepository.findByRequesterIdOrderByCreatedDesc(user.getId());
 
-        return itemRequestRepository.findByRequesterIdOrderByCreatedDesc(user.getId())
-                .stream()
-                .map(itemRequest -> ItemRequestMapper.itemRequestToDtoWithItems(
-                        itemRequest, getItemsByRequestId(itemRequest.getId())))
-                .collect(Collectors.toList());
+        return getRequestDtoWithItemsListByRequests(requests);
     }
 
     @Override
     public List<ItemRequestDtoWithItems> getAllRequests(long userId, int from, int size) {
-        return itemRequestRepository
-                .findByRequesterIdNot(userId,
-                        PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "created")))
-                .stream()
-                .map(itemRequest -> ItemRequestMapper.itemRequestToDtoWithItems(
-                        itemRequest, getItemsByRequestId(itemRequest.getId())))
-                .collect(Collectors.toList());
+        List<ItemRequest> requests = itemRequestRepository.findByRequesterIdNot(
+                userId,
+                PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "created"))
+        );
+
+        return getRequestDtoWithItemsListByRequests(requests);
     }
 
     @Override
@@ -80,9 +76,24 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                 ItemMapper.toItemDtoForRequestsList(items));
     }
 
-    private List<ItemDtoForRequests> getItemsByRequestId(long requestId) {
-        return ItemMapper.toItemDtoForRequestsList(
-                new ArrayList<>(itemRepository.findByRequestIdOrderById(requestId))
-        );
+    private List<ItemDtoForRequests> getItemsByRequestId(long requestId, List<Item> items) {
+        List<Item> itemsForMapping = items
+                .stream()
+                .filter(item -> item.getRequest().getId() == requestId)
+                .collect(Collectors.toList());
+
+        return ItemMapper.toItemDtoForRequestsList(itemsForMapping);
+    }
+
+    private List<ItemRequestDtoWithItems> getRequestDtoWithItemsListByRequests(List<ItemRequest> requests) {
+        List<Long> requestIds = requests
+                .stream()
+                .map(ItemRequest::getId)
+                .collect(Collectors.toList());
+        List<Item> itemsForMapping = itemRepository.getByRequestIdIn(requestIds);
+
+        return requests.stream().map(itemRequest -> ItemRequestMapper.itemRequestToDtoWithItems(
+                        itemRequest, getItemsByRequestId(itemRequest.getId(), itemsForMapping)))
+                .collect(Collectors.toList());
     }
 }

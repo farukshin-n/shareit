@@ -61,9 +61,9 @@ public class ItemRequestControllerTest {
     );
     private final String requestCreated = "2022-10-20T15:55:00";
     @Autowired
-    ObjectMapper mapper;
+    private ObjectMapper mapper;
     @MockBean
-    ItemRequestService itemRequestService;
+    private ItemRequestService itemRequestService;
     @Autowired
     private MockMvc mvc;
 
@@ -87,6 +87,9 @@ public class ItemRequestControllerTest {
                 .andExpect(jsonPath("$.requester.name", is(paradiseRequest.getRequester().getName())))
                 .andExpect(jsonPath("$.requester.email", is(paradiseRequest.getRequester().getEmail())))
                 .andExpect(jsonPath("$.created", is(requestCreated)));
+
+        Mockito.verify(itemRequestService, Mockito.times(1))
+                .addRequest(1L, paradiseRequest);
     }
 
     @Test
@@ -122,6 +125,9 @@ public class ItemRequestControllerTest {
                                 is(paradiseRequestWithItems.getItems().get(0).getRequestId()), Long.class
                         )
                 );
+
+        Mockito.verify(itemRequestService, Mockito.times(1))
+                .getRequests(1L);
     }
 
     @Test
@@ -160,6 +166,9 @@ public class ItemRequestControllerTest {
                                 is(paradiseRequestWithItems.getItems().get(0).getRequestId()), Long.class
                         )
                 );
+
+        Mockito.verify(itemRequestService, Mockito.times(1))
+                .getAllRequests(1L, 0, 1);
     }
 
 }

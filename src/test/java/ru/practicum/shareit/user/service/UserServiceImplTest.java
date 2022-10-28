@@ -23,9 +23,9 @@ public class UserServiceImplTest {
     private final User testUser = new User(1L, "Hannah", "hannah@gmail.com");
     private final UserDto testUserDto = new UserDto(testUser.getId(), testUser.getName(), testUser.getEmail());
     @Mock
-    UserRepository mockUserRepository;
+    private UserRepository mockUserRepository;
     @InjectMocks
-    UserServiceImpl userService;
+    private UserServiceImpl userService;
 
     @Test
     void handleAddUser_byDefault() {

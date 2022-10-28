@@ -26,9 +26,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
@@ -78,15 +80,15 @@ public class ItemRequestServiceImplTest {
             List.of(paradiseForRequests)
     );
     @Mock
-    ItemRequestRepository mockRequestRepository;
+    private ItemRequestRepository mockRequestRepository;
     @Mock
-    ItemRepository mockItemRepository;
+    private ItemRepository mockItemRepository;
     @Mock
-    UserRepository mockUserRepository;
+    private UserRepository mockUserRepository;
     @InjectMocks
-    ItemRequestServiceImpl itemRequestService;
+    private ItemRequestServiceImpl itemRequestService;
     @InjectMocks
-    ItemServiceImpl itemService;
+    private ItemServiceImpl itemService;
 
     @Test
     void handleAddRequest_byDefault() {
@@ -120,7 +122,7 @@ public class ItemRequestServiceImplTest {
                 .when(mockRequestRepository.findByRequesterIdOrderByCreatedDesc(firstUser.getId()))
                 .thenReturn(List.of(paradiseRequest));
         Mockito
-                .when(mockItemRepository.findByRequestIdOrderById(paradiseRequest.getId()))
+                .when(mockItemRepository.getByRequestIdIn(anyList()))
                 .thenReturn(List.of(paradise));
         List<ItemRequestDtoWithItems> actual = itemRequestService.getRequests(firstUser.getId());
 
@@ -147,10 +149,11 @@ public class ItemRequestServiceImplTest {
                 )
                 .thenReturn(List.of(paradiseRequest));
         Mockito
-                .when(mockItemRepository.findByRequestIdOrderById(paradiseRequest.getId()))
+                .when(mockItemRepository.getByRequestIdIn(anyList()))
                 .thenReturn(List.of(paradise));
         List<ItemRequestDtoWithItems> actual = itemRequestService.getAllRequests(secondUser.getId(), 0, 1);
 
+        assertThat(actual).isNotEmpty();
         assertEquals(List.of(paradiseRequestWithItems), actual);
     }
 

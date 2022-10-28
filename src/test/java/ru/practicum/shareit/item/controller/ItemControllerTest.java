@@ -80,9 +80,9 @@ public class ItemControllerTest {
     private final String nextBookingStart = "2022-10-23T12:35:00";
     private final String nextBookingEnd = "2022-10-24T13:00:00";
     @Autowired
-    ObjectMapper mapper;
+    private ObjectMapper mapper;
     @MockBean
-    ItemService itemService;
+    private ItemService itemService;
     @Autowired
     private MockMvc mvc;
 
@@ -108,6 +108,9 @@ public class ItemControllerTest {
                 .andExpect(jsonPath("$.owner.name", is(paradiseDto.getOwner().getName())))
                 .andExpect(jsonPath("$.owner.email", is(paradiseDto.getOwner().getEmail())))
                 .andExpect(jsonPath("$.requestId", is(paradiseDto.getRequestId()), Long.class));
+
+        Mockito.verify(itemService, Mockito.times(1))
+                .createItem(1L, paradiseDto);
     }
 
     @Test
@@ -128,6 +131,9 @@ public class ItemControllerTest {
                 .andExpect(jsonPath("$.authorId", is(comment.getAuthorId()), Long.class))
                 .andExpect(jsonPath("$.authorName", is(comment.getAuthorName())))
                 .andExpect(jsonPath("$.created", is(commentCreated)));
+
+        Mockito.verify(itemService, Mockito.times(1))
+                .addComment(1L, 3L, comment);
     }
 
     @Test
@@ -220,6 +226,9 @@ public class ItemControllerTest {
                                 is(paradiseWithCommentsAndBookings.getNextBooking().getBookerId()), Long.class
                         )
                 );
+
+        Mockito.verify(itemService, Mockito.times(1))
+                .getItemDtoWithBookingsAndComments(2L, 3L);
     }
 
     @Test
@@ -307,11 +316,16 @@ public class ItemControllerTest {
                                 is(paradiseWithCommentsAndBookings.getNextBooking().getBookerId()), Long.class
                         )
                 );
+
+        Mockito.verify(itemService, Mockito.times(1))
+                .getAllItemsByUserId(2L, 0, 1);
     }
 
     @Test
     void handleUpdateItem() throws Exception {
-        Mockito.when(itemService.updateItem(anyLong(), anyLong(), any())).thenReturn(paradiseDto);
+        Mockito
+                .when(itemService.updateItem(anyLong(), anyLong(), any()))
+                .thenReturn(paradiseDto);
 
         mvc.perform(
                         patch("/items/{itemId}", paradiseDto.getId())
@@ -329,6 +343,9 @@ public class ItemControllerTest {
                 .andExpect(jsonPath("$.owner.name", is(paradiseDto.getOwner().getName())))
                 .andExpect(jsonPath("$.owner.email", is(paradiseDto.getOwner().getEmail())))
                 .andExpect(jsonPath("$.requestId", is(paradiseDto.getRequestId()), Long.class));
+
+        Mockito.verify(itemService, Mockito.times(1))
+                .updateItem(2L, 3L, paradiseDto);
     }
 
     @Test
@@ -371,5 +388,8 @@ public class ItemControllerTest {
                 .andExpect(jsonPath("$.[0].owner.name", is(paradiseDto.getOwner().getName())))
                 .andExpect(jsonPath("$.[0].owner.email", is(paradiseDto.getOwner().getEmail())))
                 .andExpect(jsonPath("$.[0].requestId", is(paradiseDto.getRequestId()), Long.class));
+
+        Mockito.verify(itemService, Mockito.times(1))
+                .searchItems("table", 0, 1);
     }
 }

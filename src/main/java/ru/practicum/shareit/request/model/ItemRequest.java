@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "requests")
 @ToString
-@EqualsAndHashCode
 public class ItemRequest {
     @Id
     @Column(name = "request_id")

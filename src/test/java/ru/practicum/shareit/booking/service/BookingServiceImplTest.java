@@ -1,829 +1,409 @@
 package ru.practicum.shareit.booking.service;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlGroup;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.InputBookingDto;
-import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingState;
 import ru.practicum.shareit.booking.model.BookingStatus;
-import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.exception.NotAvailableException;
 import ru.practicum.shareit.exception.SubstanceNotFoundException;
-import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.repository.ItemRepository;
-import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
-@ExtendWith(MockitoExtension.class)
+@Transactional
+@SpringBootTest
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class BookingServiceImplTest {
-    @Mock
-    BookingRepository mockBookingRepository;
-    @Mock
-    UserRepository mockUserRepository;
-    @Mock
-    ItemRepository mockItemRepository;
-    @InjectMocks
-    BookingServiceImpl bookingService;
+    private final BookingService bookService;
 
     @Test
-    void handleAddBooking_byDefault() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", true, secondUser, null);
-        InputBookingDto newBookingDto = new InputBookingDto(
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(4),
-                item.getId()
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
+    void handleAddBooking_ByDefault() {
+        InputBookingDto inputBookingDto = new InputBookingDto(
+                LocalDateTime.now().plusMonths(1),
+                LocalDateTime.now().plusMonths(2),
+                5L
         );
-        Booking booking = new Booking(
-                4L,
-                newBookingDto.getStart(),
-                newBookingDto.getEnd(),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
-        Mockito.when(mockUserRepository.findById(firstUser.getId())).thenReturn(Optional.of(firstUser));
-        Mockito.when(mockItemRepository.findById(item.getId())).thenReturn(Optional.of(item));
-        Mockito.when(mockBookingRepository.save(any())).thenReturn(booking);
-        BookingDto actual = bookingService.addBooking(firstUser.getId(), newBookingDto);
 
-        assertEquals(expected, actual);
+        BookingDto newBookingDto = bookService.addBooking(1L, inputBookingDto);
+        assertEquals(newBookingDto.getId(), 1L);
+        assertEquals(newBookingDto.getStatus(), BookingStatus.WAITING);
+        assertEquals(newBookingDto.getId(), 1L);
+        assertEquals(newBookingDto.getItem().getId(), 5L);
+        assertEquals(newBookingDto.getBooker().getId(), 1L);
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-without-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleAddBooking_withItemIsNotAvailable() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
         InputBookingDto newBookingDto = new InputBookingDto(
                 LocalDateTime.now(),
                 LocalDateTime.now().plusDays(4),
-                item.getId()
+                3L
         );
-        Mockito.when(mockUserRepository.findById(firstUser.getId())).thenReturn(Optional.of(firstUser));
-        Mockito.when(mockItemRepository.findById(item.getId())).thenReturn(Optional.of(item));
 
         assertThrows(
                 NotAvailableException.class,
-                () -> bookingService.addBooking(firstUser.getId(), newBookingDto),
+                () -> bookService.addBooking(1L, newBookingDto),
                 "Expected addBooking() to throw NotAvailableException because the item is not available."
         );
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleAddBooking_withUserDoesNotExist() {
         Long userId = 53L;
         InputBookingDto newBookingDto = new InputBookingDto(
                 LocalDateTime.now(),
                 LocalDateTime.now().plusDays(4),
-                2L
+                3L
         );
-        Mockito
-                .when(mockUserRepository.findById(userId))
-                .thenReturn(Optional.empty());
 
         assertThrows(
                 SubstanceNotFoundException.class,
-                () -> bookingService.addBooking(userId, newBookingDto),
+                () -> bookService.addBooking(userId, newBookingDto),
                 "Expected addBooking() to throw SubstanceNotFoundException because the user does not exist.");
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleAddBooking_withItemDoesNotExist() {
-        Long itemId = 51L;
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
         InputBookingDto newBookingDto = new InputBookingDto(
                 LocalDateTime.now(),
                 LocalDateTime.now().plusDays(4),
-                itemId
+                51L
         );
-        Mockito
-                .when(mockUserRepository.findById(firstUser.getId()))
-                .thenReturn(Optional.of(firstUser));
-        Mockito
-                .when(mockItemRepository.findById(itemId))
-                .thenReturn(Optional.empty());
 
         assertThrows(
                 SubstanceNotFoundException.class,
-                () -> bookingService.addBooking(firstUser.getId(), newBookingDto),
+                () -> bookService.addBooking(1L, newBookingDto),
                 "Expected addBooking() to throw SubstanceNotFoundException because the item does not exist."
         );
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleAddBooking_BookerIsOwner() {
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(2L, "Paradise", "nice garden without people", true, secondUser, null);
         InputBookingDto newBookingDto = new InputBookingDto(
                 LocalDateTime.now(),
                 LocalDateTime.now().plusDays(4),
-                item.getId()
+                3L
         );
-        Mockito
-                .when(mockUserRepository.findById(secondUser.getId()))
-                .thenReturn(Optional.of(secondUser));
-        Mockito
-                .when(mockItemRepository.findById(item.getId()))
-                .thenReturn(Optional.of(item));
 
         assertThrows(
                 SubstanceNotFoundException.class,
-                () -> bookingService.addBooking(secondUser.getId(), newBookingDto),
+                () -> bookService.addBooking(1L, newBookingDto),
                 "Expected addBooking() to throw SubstanceNotFoundException because the owner cannot book their item."
         );
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-one-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetBooking_withUserIsOwner() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", true, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                booking.getStatus()
-        );
-        Mockito
-                .when(mockBookingRepository.findById(booking.getId()))
-                .thenReturn(Optional.of(booking));
-        Mockito
-                .when(mockUserRepository.findById(secondUser.getId()))
-                .thenReturn(Optional.of(secondUser));
-        BookingDto actual = bookingService.getBooking(secondUser.getId(), booking.getId());
+        BookingDto actual = bookService.getBooking(1L, 7L);
 
-        assertEquals(expected, actual);
+        assertThat(actual).isNotNull();
+        assertEquals(7L, actual.getId());
+        assertEquals(LocalDateTime.of(2022, 10, 25, 12, 30), actual.getStart());
+        assertEquals(LocalDateTime.of(2022, 10, 30, 13, 35), actual.getEnd());
+        assertEquals(3L, actual.getItem().getId());
+        assertEquals(1L, actual.getBooker().getId());
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-one-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetBooking_withUserIsNeitherBookerNorOwner() {
         Long randomId = 50L;
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", true, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
-        Mockito
-                .when(mockBookingRepository.findById(booking.getId()))
-                .thenReturn(Optional.of(booking));
 
         assertThrows(SubstanceNotFoundException.class,
-                () -> bookingService.getBooking(randomId, booking.getId()));
+                () -> bookService.getBooking(randomId, 7L));
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-one-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetBooking_withUserIsBooker() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", true, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                booking.getStatus()
-        );
-        Mockito
-                .when(mockBookingRepository.findById(booking.getId()))
-                .thenReturn(Optional.of(booking));
-        Mockito
-                .when(mockUserRepository.findById(firstUser.getId()))
-                .thenReturn(Optional.of(firstUser));
-        BookingDto actual = bookingService.getBooking(firstUser.getId(), booking.getId());
+        BookingDto actual = bookService.getBooking(1L, 7L);
 
-        assertEquals(expected, actual);
+        assertThat(actual).isNotNull();
+        assertEquals(7L, actual.getId());
+        assertEquals(LocalDateTime.of(2022, 10, 25, 12, 30), actual.getStart());
+        assertEquals(LocalDateTime.of(2022, 10, 30, 13, 35), actual.getEnd());
+        assertEquals(3L, actual.getItem().getId());
+        assertEquals(1L, actual.getBooker().getId());
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-without-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetBooking_withBookingDoesNotExist() {
-        Long userId = 1L;
         Long bookingId = 51L;
-        Mockito
-                .when(mockBookingRepository.findById(bookingId))
-                .thenReturn(Optional.empty());
 
         assertThrows(
                 SubstanceNotFoundException.class,
-                () -> bookingService.getBooking(userId, bookingId),
+                () -> bookService.getBooking(1L, bookingId),
                 "Expected getBooking() to throw SubstanceNotFoundException because the booking does not exist."
         );
     }
 
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetUserBookings_withUserDoesNotExist() {
         Long randomId = 53L;
-        Mockito
-                .when(mockUserRepository.findById(randomId))
-                .thenReturn(Optional.empty());
 
         assertThrows(
                 SubstanceNotFoundException.class,
-                () -> bookingService.getUserBookings(randomId, BookingState.ALL, 0, 10)
+                () -> bookService.getUserBookings(randomId, BookingState.ALL, 0, 10)
         );
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-one-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetUserBookings_withStateIsWaiting() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                booking.getStatus()
-        );
-        Mockito
-                .when(mockUserRepository.findById(firstUser.getId()))
-                .thenReturn(Optional.of(firstUser));
-        Mockito
-                .when(
-                        mockBookingRepository.findBookingsByBooker_IdAndStatus(
-                                firstUser.getId(),
-                                BookingStatus.WAITING,
-                                PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "start"))
-                        )
-                )
-                .thenReturn(List.of(booking));
-        List<BookingDto> actual = bookingService.getUserBookings(firstUser.getId(), BookingState.WAITING, 0, 1);
+        List<BookingDto> actual = bookService.getUserBookings(1L, BookingState.WAITING, 0, 1);
 
-        assertEquals(List.of(expected), actual);
+        assertEquals(actual.get(0).getId(), 7L);
+        assertEquals(actual.get(0).getStatus(), BookingStatus.WAITING);
+        assertEquals(actual.get(0).getItem().getId(), 3L);
+        assertEquals(actual.get(0).getBooker().getId(), 1L);
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-rejected-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetUserBookings_withStateIsRejected() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
+        List<BookingDto> actual = bookService.getUserBookings(1L, BookingState.REJECTED, 0, 1);
 
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                booking.getStatus()
-        );
-        Mockito
-                .when(mockUserRepository.findById(firstUser.getId()))
-                .thenReturn(Optional.of(firstUser));
-        Mockito
-                .when(
-                        mockBookingRepository.findBookingsByBooker_IdAndStatus(
-                                firstUser.getId(),
-                                BookingStatus.REJECTED,
-                                PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "start"))
-                        )
-                )
-                .thenReturn(List.of(booking));
-        List<BookingDto> actual = bookingService.getUserBookings(firstUser.getId(), BookingState.REJECTED, 0, 1);
-
-        assertEquals(List.of(expected), actual);
+        assertEquals(actual.get(0).getId(), 7L);
+        assertEquals(actual.get(0).getStatus(), BookingStatus.REJECTED);
+        assertEquals(actual.get(0).getItem().getId(), 3L);
+        assertEquals(actual.get(0).getBooker().getId(), 1L);
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-current-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetUserBookings_withStateIsCurrent() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
+        List<BookingDto> actual = bookService.getUserBookings(1L, BookingState.CURRENT, 0, 1);
 
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                booking.getStatus()
-        );
-        Mockito
-                .when(mockUserRepository.findById(firstUser.getId()))
-                .thenReturn(Optional.of(firstUser));
-        Mockito
-                .when(
-                        mockBookingRepository.findBookingsByBooker_IdAndStartIsBeforeAndEndIsAfter(
-                                eq(firstUser.getId()),
-                                any(LocalDateTime.class),
-                                any(LocalDateTime.class),
-                                eq(PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "start")))
-                        )
-                )
-                .thenReturn(List.of(booking));
-        List<BookingDto> actual = bookingService.getUserBookings(firstUser.getId(), BookingState.CURRENT, 0, 1);
-
-        assertEquals(List.of(expected), actual);
+        assertEquals(actual.get(0).getId(), 7L);
+        assertEquals(actual.get(0).getStatus(), BookingStatus.WAITING);
+        assertEquals(actual.get(0).getItem().getId(), 3L);
+        assertEquals(actual.get(0).getBooker().getId(), 1L);
+        assertTrue(actual.get(0).getStart().isBefore(LocalDateTime.now()));
+        assertTrue(actual.get(0).getEnd().isAfter(LocalDateTime.now()));
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-past-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetUserBookings_withStateIsPast() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
+        List<BookingDto> actual = bookService.getUserBookings(1L, BookingState.PAST, 0, 1);
 
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                booking.getStatus()
-        );
-        Mockito
-                .when(mockUserRepository.findById(firstUser.getId()))
-                .thenReturn(Optional.of(firstUser));
-        Mockito
-                .when(
-                        mockBookingRepository.findBookingsByBooker_IdAndEndIsBefore(
-                                eq(firstUser.getId()),
-                                any(LocalDateTime.class),
-                                eq(PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "start")))
-                        )
-                )
-                .thenReturn(List.of(booking));
-        List<BookingDto> actual = bookingService.getUserBookings(firstUser.getId(), BookingState.PAST, 0, 1);
-
-        assertEquals(List.of(expected), actual);
+        assertEquals(actual.get(0).getId(), 7L);
+        assertEquals(actual.get(0).getStatus(), BookingStatus.WAITING);
+        assertEquals(actual.get(0).getItem().getId(), 3L);
+        assertEquals(actual.get(0).getBooker().getId(), 1L);
+        assertTrue(actual.get(0).getStart().isBefore(LocalDateTime.now()));
+        assertTrue(actual.get(0).getEnd().isBefore(LocalDateTime.now()));
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-future-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetUserBookings_withStateIsFuture() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
+        List<BookingDto> actual = bookService.getUserBookings(1L, BookingState.FUTURE, 0, 1);
 
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                booking.getStatus()
-        );
-        Mockito.when(mockUserRepository.findById(firstUser.getId())).thenReturn(Optional.of(firstUser));
-        Mockito
-                .when(
-                        mockBookingRepository.findBookingsByBooker_IdAndStartIsAfter(
-                                eq(firstUser.getId()),
-                                any(LocalDateTime.class),
-                                eq(PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "start")))
-                        )
-                )
-                .thenReturn(List.of(booking));
-        List<BookingDto> actual = bookingService.getUserBookings(firstUser.getId(), BookingState.FUTURE, 0, 1);
-
-        assertEquals(List.of(expected), actual);
+        assertEquals(actual.get(0).getId(), 7L);
+        assertEquals(actual.get(0).getStatus(), BookingStatus.WAITING);
+        assertEquals(actual.get(0).getItem().getId(), 3L);
+        assertEquals(actual.get(0).getBooker().getId(), 1L);
+        assertTrue(actual.get(0).getStart().isAfter(LocalDateTime.now()));
+        assertTrue(actual.get(0).getEnd().isAfter(LocalDateTime.now()));
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-one-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetUserBookings_withStateIsAll() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
+        List<BookingDto> actual = bookService.getUserBookings(1L, BookingState.ALL, 0, 1);
 
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                booking.getStatus()
-        );
-        Mockito
-                .when(mockUserRepository.findById(firstUser.getId()))
-                .thenReturn(Optional.of(firstUser));
-        Mockito
-                .when(
-                        mockBookingRepository.findBookingsByBooker_Id(
-                                eq(firstUser.getId()),
-                                eq(PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "start")))
-                        )
-                )
-                .thenReturn(List.of(booking));
-        List<BookingDto> actual = bookingService.getUserBookings(firstUser.getId(), BookingState.ALL, 0, 1);
-
-        assertEquals(List.of(expected), actual);
+        assertThat(actual).isNotNull();
+        assertEquals(7L, actual.get(0).getId());
+        assertEquals(LocalDateTime.of(2022, 10, 25, 12, 30), actual.get(0).getStart());
+        assertEquals(LocalDateTime.of(2022, 10, 30, 13, 35), actual.get(0).getEnd());
+        assertEquals(3L, actual.get(0).getItem().getId());
+        assertEquals(1L, actual.get(0).getBooker().getId());
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-one-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetOwnerBookingList_withStateIsWaiting() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
+        List<BookingDto> actual = bookService.getOwnerBookingList(1L, BookingState.WAITING, 0, 1);
 
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                booking.getStatus()
-        );
-        Mockito
-                .when(mockUserRepository.findById(firstUser.getId()))
-                .thenReturn(Optional.of(firstUser));
-        Mockito
-                .when(
-                        mockBookingRepository.getBookingsByUserItemsWithState(
-                                firstUser.getId(),
-                                BookingStatus.WAITING,
-                                PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "start"))
-                        )
-                )
-                .thenReturn(List.of(booking));
-        List<BookingDto> actual = bookingService.getOwnerBookingList(firstUser.getId(), BookingState.WAITING, 0, 1);
-
-        assertEquals(List.of(expected), actual);
+        assertEquals(actual.get(0).getId(), 7L);
+        assertEquals(actual.get(0).getStatus(), BookingStatus.WAITING);
+        assertEquals(actual.get(0).getItem().getId(), 3L);
+        assertEquals(actual.get(0).getBooker().getId(), 1L);
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-rejected-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetOwnerBookingList_withStateIsRejected() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
+        List<BookingDto> actual = bookService.getOwnerBookingList(1L, BookingState.REJECTED, 0, 1);
 
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                booking.getStatus()
-        );
-        Mockito
-                .when(mockUserRepository.findById(firstUser.getId()))
-                .thenReturn(Optional.of(firstUser));
-        Mockito
-                .when(
-                        mockBookingRepository.getBookingsByUserItemsWithState(
-                                firstUser.getId(),
-                                BookingStatus.REJECTED,
-                                PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "start"))
-                        )
-                )
-                .thenReturn(List.of(booking));
-        List<BookingDto> actual = bookingService.getOwnerBookingList(firstUser.getId(), BookingState.REJECTED, 0, 1);
-
-        assertEquals(List.of(expected), actual);
+        assertEquals(actual.get(0).getId(), 7L);
+        assertEquals(actual.get(0).getStatus(), BookingStatus.REJECTED);
+        assertEquals(actual.get(0).getItem().getId(), 3L);
+        assertEquals(actual.get(0).getBooker().getId(), 1L);
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-current-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetOwnerBookingList_withStateIsCurrent() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
+        List<BookingDto> actual = bookService.getOwnerBookingList(1L, BookingState.CURRENT, 0, 1);
 
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                booking.getStatus()
-        );
-        Mockito
-                .when(mockUserRepository.findById(firstUser.getId()))
-                .thenReturn(Optional.of(firstUser));
-        Mockito
-                .when(
-                        mockBookingRepository.getBookingsByOwnerIdCurrent(
-                                eq(firstUser.getId()),
-                                eq(PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "start")))
-                        )
-                )
-                .thenReturn(List.of(booking));
-        List<BookingDto> actual = bookingService.getOwnerBookingList(firstUser.getId(), BookingState.CURRENT, 0, 1);
-
-        assertEquals(List.of(expected), actual);
+        assertEquals(actual.get(0).getId(), 7L);
+        assertEquals(actual.get(0).getStatus(), BookingStatus.WAITING);
+        assertEquals(actual.get(0).getItem().getId(), 3L);
+        assertEquals(actual.get(0).getBooker().getId(), 1L);
+        assertTrue(actual.get(0).getStart().isBefore(LocalDateTime.now()));
+        assertTrue(actual.get(0).getEnd().isAfter(LocalDateTime.now()));
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-past-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetOwnerBookingList_withStateIsPast() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                booking.getStatus()
-        );
-        Mockito
-                .when(mockUserRepository.findById(firstUser.getId()))
-                .thenReturn(Optional.of(firstUser));
-        Mockito
-                .when(
-                        mockBookingRepository.getBookingsByOwnerIdPast(
-                                eq(firstUser.getId()),
-                                eq(PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "start")))
-                        )
-                )
-                .thenReturn(List.of(booking));
-        List<BookingDto> actual = bookingService.getOwnerBookingList(firstUser.getId(), BookingState.PAST, 0, 1);
+        List<BookingDto> actual = bookService.getOwnerBookingList(1L, BookingState.PAST, 0, 1);
 
-        assertEquals(List.of(expected), actual);
+        assertEquals(actual.get(0).getId(), 7L);
+        assertEquals(actual.get(0).getStatus(), BookingStatus.WAITING);
+        assertEquals(actual.get(0).getItem().getId(), 3L);
+        assertEquals(actual.get(0).getBooker().getId(), 1L);
+        assertTrue(actual.get(0).getStart().isBefore(LocalDateTime.now()));
+        assertTrue(actual.get(0).getEnd().isBefore(LocalDateTime.now()));
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-future-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetOwnerBookingList_withStateIsFuture() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                booking.getStatus()
-        );
-        Mockito
-                .when(mockUserRepository.findById(firstUser.getId()))
-                .thenReturn(Optional.of(firstUser));
-        Mockito
-                .when(
-                        mockBookingRepository.getBookingsByOwnerIdFuture(
-                                eq(firstUser.getId()),
-                                eq(PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "start")))
-                        )
-                )
-                .thenReturn(List.of(booking));
-        List<BookingDto> actual = bookingService.getOwnerBookingList(firstUser.getId(), BookingState.FUTURE, 0, 1);
+        List<BookingDto> actual = bookService.getOwnerBookingList(1L, BookingState.FUTURE, 0, 1);
 
-        assertEquals(List.of(expected), actual);
+        assertEquals(actual.get(0).getId(), 7L);
+        assertEquals(actual.get(0).getStatus(), BookingStatus.WAITING);
+        assertEquals(actual.get(0).getItem().getId(), 3L);
+        assertEquals(actual.get(0).getBooker().getId(), 1L);
+        assertTrue(actual.get(0).getStart().isAfter(LocalDateTime.now()));
+        assertTrue(actual.get(0).getEnd().isAfter(LocalDateTime.now()));
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-one-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleGetOwnerBookingList_withStateIsAll() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
+        List<BookingDto> actual = bookService.getOwnerBookingList(1L, BookingState.ALL, 0, 1);
 
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                booking.getStatus()
-        );
-        Mockito
-                .when(mockUserRepository.findById(firstUser.getId()))
-                .thenReturn(Optional.of(firstUser));
-        Mockito
-                .when(
-                        mockBookingRepository.getBookingsByOwnerId(
-                                eq(firstUser.getId()),
-                                eq(PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "start")))
-                        )
-                )
-                .thenReturn(List.of(booking));
-        List<BookingDto> actual = bookingService.getOwnerBookingList(firstUser.getId(), BookingState.ALL, 0, 1);
-
-        assertEquals(List.of(expected), actual);
+        assertThat(actual).isNotNull();
+        assertEquals(7L, actual.get(0).getId());
+        assertEquals(LocalDateTime.of(2022, 10, 25, 12, 30), actual.get(0).getStart());
+        assertEquals(LocalDateTime.of(2022, 10, 30, 13, 35), actual.get(0).getEnd());
+        assertEquals(3L, actual.get(0).getItem().getId());
+        assertEquals(1L, actual.get(0).getBooker().getId());
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-one-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleChangeBookingStatus_byDefault() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
-        BookingDto expected = new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                item,
-                firstUser,
-                BookingStatus.APPROVED
-        );
-        Mockito
-                .when(mockBookingRepository.findById(booking.getId()))
-                .thenReturn(Optional.of(booking));
-        lenient()
-                .when(mockBookingRepository.save(booking))
-                .thenReturn(booking);
-        BookingDto actual = bookingService.changeBookingStatus(secondUser.getId(), booking.getId(), true);
+        BookingDto actual = bookService.changeBookingStatus(1L, 7L, true);
 
-        assertEquals(expected, actual);
+        assertEquals(actual.getStatus(), BookingStatus.APPROVED);
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-one-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleChangeBookingStatus_withBookingDoesNotExist() {
         Long bookingId = 53L;
-        Mockito
-                .when(mockBookingRepository.findById(bookingId))
-                .thenReturn(Optional.empty());
 
         assertThrows(
                 SubstanceNotFoundException.class,
-                () -> bookingService.changeBookingStatus(1L, bookingId, true)
+                () -> bookService.changeBookingStatus(1L, bookingId, true)
         );
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-one-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleChangeBookingStatus_wihtUserIsNotOwner() {
         Long randomId = 53L;
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.WAITING
-        );
-        Mockito
-                .when(mockBookingRepository.findById(booking.getId()))
-                .thenReturn(Optional.of(booking));
 
         assertThrows(
                 ForbiddenException.class,
-                () -> bookingService.changeBookingStatus(randomId, booking.getId(), true)
+                () -> bookService.changeBookingStatus(randomId, 7L, true)
         );
     }
 
     @Test
+    @SqlGroup({
+            @Sql(value = {"booking-service-test-before-with-approved-booking.sql"}, executionPhase = BEFORE_TEST_METHOD)
+    })
     void handleChangeBookingStatus_StatusIsTheSame() {
-        User firstUser = new User(1L, "Adam", "adam@paradise.com");
-        User secondUser = new User(2L, "Eva", "eva@paradise.com");
-        Item item = new Item(3L, "Paradise", "nice garden without people", false, secondUser, null);
-        Booking booking = new Booking(
-                5L,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(2),
-                item,
-                firstUser,
-                BookingStatus.APPROVED
-        );
-        Mockito
-                .when(mockBookingRepository.findById(booking.getId()))
-                .thenReturn(Optional.of(booking));
-
         assertThrows(
-                IllegalArgumentException.class,
-                () -> bookingService.changeBookingStatus(secondUser.getId(), booking.getId(), true)
+                ForbiddenException.class,
+                () -> bookService.changeBookingStatus(2L, 7L, true)
         );
     }
 

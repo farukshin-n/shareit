@@ -108,17 +108,17 @@ public class ItemServiceImplTest {
             comment.getCreated()
     );
     @Mock
-    ItemRepository mockItemRepository;
+    private ItemRepository mockItemRepository;
     @Mock
-    UserRepository mockUserRepository;
+    private UserRepository mockUserRepository;
     @Mock
-    BookingRepository mockBookingRepository;
+    private BookingRepository mockBookingRepository;
     @Mock
-    CommentRepository mockCommentRepository;
+    private CommentRepository mockCommentRepository;
     @Mock
-    ItemRequestRepository mockItemRequestRepository;
+    private ItemRequestRepository mockItemRequestRepository;
     @InjectMocks
-    ItemServiceImpl itemService;
+    private ItemServiceImpl itemService;
 
     @Test
     void handleCreateItem_byDefault() {
