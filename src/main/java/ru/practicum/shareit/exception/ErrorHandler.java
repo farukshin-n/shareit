@@ -31,11 +31,4 @@ public class ErrorHandler {
         log.error("404 {}", e.getMessage(), e);
         return new ErrorResponse(e.getMessage());
     }
-
-    @ExceptionHandler({DuplicateEmailException.class})
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleConflictCases(RuntimeException e) {
-        log.error("409 {}", e.getMessage(), e);
-        return new ErrorResponse(e.getMessage());
-    }
 }

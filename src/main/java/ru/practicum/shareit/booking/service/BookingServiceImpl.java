@@ -33,7 +33,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public BookingDto addBooking(long userId, InputBookingDto inputBookingDto) {
+    public BookingDto addBooking(long userId, InputBookingDto inputBookingDto) throws NotAvailableException {
         validateStartEndOfBooking(inputBookingDto);
         final User booker = userRepository.findById(userId).orElseThrow(() -> new SubstanceNotFoundException(
                 String.format("There isn't user with id %d in database.", userId)));
