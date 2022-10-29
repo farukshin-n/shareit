@@ -13,6 +13,7 @@ import javax.validation.constraints.NotEmpty;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
+@EqualsAndHashCode
 public class UserDto {
     private Long id;
     @NotBlank(message = "Name cannot be blank", groups = {Create.class})

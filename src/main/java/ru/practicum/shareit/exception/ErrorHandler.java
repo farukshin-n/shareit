@@ -10,8 +10,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @Slf4j
 @RestControllerAdvice
 public class ErrorHandler {
-    @ExceptionHandler({NotAvailableException.class, IllegalStartEndOfBookingException.class,
-            CommentFromUserWithoutBookingException.class, IllegalArgumentException.class})
+    @ExceptionHandler({NotAvailableException.class, IllegalArgumentException.class,
+            IllegalArgumentException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleNotAvailableCases(RuntimeException e) {
         log.error("400 {}", e.getMessage(), e);
@@ -29,13 +29,6 @@ public class ErrorHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleNotFoundCases(RuntimeException e) {
         log.error("404 {}", e.getMessage(), e);
-        return new ErrorResponse(e.getMessage());
-    }
-
-    @ExceptionHandler({DuplicateEmailException.class})
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleConflictCases(RuntimeException e) {
-        log.error("409 {}", e.getMessage(), e);
         return new ErrorResponse(e.getMessage());
     }
 }

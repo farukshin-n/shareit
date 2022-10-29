@@ -11,9 +11,9 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 @Entity
 @Table(name = "bookings")
-@EqualsAndHashCode
 public class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

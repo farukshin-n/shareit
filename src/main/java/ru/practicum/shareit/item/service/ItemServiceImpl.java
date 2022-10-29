@@ -2,13 +2,14 @@ package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dto.BookingDtoWithBookerId;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.booking.service.BookingMapper;
-import ru.practicum.shareit.exception.CommentFromUserWithoutBookingException;
 import ru.practicum.shareit.exception.ForbiddenException;
+import ru.practicum.shareit.exception.NotAvailableException;
 import ru.practicum.shareit.exception.SubstanceNotFoundException;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -109,9 +110,9 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemDtoWithBookingsAndComments> getAllItemsByUserId(Long userId) {
+    public List<ItemDtoWithBookingsAndComments> getAllItemsByUserId(Long userId, int from, int size) {
         List<ItemDtoWithBookingsAndComments> resultList = new ArrayList<>();
-        List<Item> items = itemRepository.findByOwnerIdOrderById(userId);
+        List<Item> items = itemRepository.findByOwnerIdOrderById(userId, PageRequest.of(from / size, size));
         Set<Long> itemIds = items.stream().map(Item::getId).collect(Collectors.toSet());
         List<Comment> comments = commentRepository.findCommentsByItem_IdIn(itemIds);
         List<Booking> bookings = bookingRepository.getBookingsByItem_IdInOrderByEndAsc(itemIds);
@@ -201,12 +202,12 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemDto> searchItems(String text) {
+    public List<ItemDto> searchItems(String text, int from, int size) {
         if (text.isBlank()) {
             return new ArrayList<>();
         }
 
-        return itemRepository.searchItems(text)
+        return itemRepository.searchItems(text, PageRequest.of(from / size, size))
                 .stream()
                 .map(ItemMapper::itemToDto)
                 .collect(Collectors.toList());
@@ -224,7 +225,7 @@ public class ItemServiceImpl implements ItemService {
         final List<Booking> bookings = bookingRepository
                 .findBookingsByItem_IdAndBooker_IdAndEndIsBefore(itemId, authorId, LocalDateTime.now());
         if (bookings.stream().findAny().isEmpty()) {
-            throw new CommentFromUserWithoutBookingException(
+            throw new NotAvailableException(
                     String.format("User with id %d hasn't any bookings and has no rights to add comments.", authorId)
             );
         }

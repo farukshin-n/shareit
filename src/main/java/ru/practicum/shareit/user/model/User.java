@@ -10,6 +10,8 @@ import javax.persistence.*;
 @Table(name = "users")
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode
+@ToString
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

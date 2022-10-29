@@ -12,12 +12,15 @@ import ru.practicum.shareit.item.dto.ItemDtoWithBookingsAndComments;
 import ru.practicum.shareit.item.service.ItemService;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 import java.util.List;
 
 @RestController
 @RequestMapping("/items")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class ItemController {
     private final ItemService itemService;
 
@@ -45,9 +48,12 @@ public class ItemController {
     }
 
     @GetMapping
-    public List<ItemDtoWithBookingsAndComments> getAllItemsByUser(@RequestHeader("X-Sharer-User-Id") Long userId) {
+    public List<ItemDtoWithBookingsAndComments> getAllItemsByUser(
+            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestParam(defaultValue = "0") @PositiveOrZero final int from,
+            @RequestParam(defaultValue = "100") @Positive final int size) {
         log.info("We have request for getting all items by user with id {}.", userId);
-        return itemService.getAllItemsByUserId(userId);
+        return itemService.getAllItemsByUserId(userId, from, size);
     }
 
     @PatchMapping("/{itemId}")
@@ -69,8 +75,10 @@ public class ItemController {
     }
 
     @GetMapping("/search")
-    public List<ItemDto> searchItems(@RequestParam String text) {
+    public List<ItemDto> searchItems(@RequestParam String text,
+                                     @RequestParam(defaultValue = "0") @PositiveOrZero final int from,
+                                     @RequestParam(defaultValue = "100") @Positive final int size) {
         log.info("We have request for search {}.", text);
-        return itemService.searchItems(text);
+        return itemService.searchItems(text, from, size);
     }
 }

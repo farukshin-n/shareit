@@ -1,12 +1,50 @@
 package ru.practicum.shareit.request;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.request.dto.ItemRequestDto;
+import ru.practicum.shareit.request.dto.ItemRequestDtoWithItems;
+import ru.practicum.shareit.request.service.ItemRequestService;
 
-/**
- * TODO Sprint add-item-requests.
- */
+import javax.validation.Valid;
+import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
+import java.util.List;
+
+
 @RestController
 @RequestMapping(path = "/requests")
+@RequiredArgsConstructor
+@Slf4j
+@Validated
 public class ItemRequestController {
+    private final ItemRequestService itemRequestService;
+
+    @PostMapping
+    public ItemRequestDto addRequest(@RequestHeader("X-Sharer-User-Id") long id,
+                                     @Valid @RequestBody ItemRequestDto itemRequestDto) {
+        return itemRequestService.addRequest(id, itemRequestDto);
+    }
+
+    @GetMapping
+    public List<ItemRequestDtoWithItems> getRequests(@RequestHeader("X-Sharer-User-Id") long id) {
+        return itemRequestService.getRequests(id);
+    }
+
+    @GetMapping("/all")
+    public List<ItemRequestDtoWithItems> getAllRequests(
+            @RequestHeader("X-Sharer-User-Id") long id,
+            @RequestParam(name = "from", defaultValue = "0") @PositiveOrZero int from,
+            @RequestParam(name = "size", defaultValue = "10") @Positive int size
+    ) {
+        return itemRequestService.getAllRequests(id, from, size);
+    }
+
+    @GetMapping("/{requestId}")
+    public ItemRequestDtoWithItems getRequest(@RequestHeader("X-Sharer-User-Id") final long id,
+                                              @PathVariable final long requestId) {
+        return itemRequestService.getRequest(id, requestId);
+    }
 }
