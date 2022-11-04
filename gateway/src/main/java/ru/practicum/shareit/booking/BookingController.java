@@ -23,6 +23,7 @@ public class BookingController {
 	@PostMapping
 	public ResponseEntity<Object> bookItem(@RequestHeader("X-Sharer-User-Id") long userId,
 										   @RequestBody @Valid InputBookingDto inputBookingDto) {
+		validateStartEndOfBooking(inputBookingDto);
 		log.info("Creating booking {}, userId={}", inputBookingDto, userId);
 		return bookingClient.bookItem(userId, inputBookingDto);
 	}
@@ -69,5 +70,11 @@ public class BookingController {
 		log.info("Get request for bookings by owner with state {}, by userId={}, from={}, size={}",
 				stateParam, userId, from, size);
 		return bookingClient.getOwnerBookings(userId, state, from, size);
+	}
+
+	private void validateStartEndOfBooking(InputBookingDto inputBookingDto) {
+		if (inputBookingDto.getStart().isAfter(inputBookingDto.getEnd())) {
+			throw new IllegalArgumentException("Start of booking cannot ba after its end.");
+		}
 	}
 }

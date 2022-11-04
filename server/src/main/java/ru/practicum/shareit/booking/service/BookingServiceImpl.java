@@ -36,7 +36,6 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingDto addBooking(long userId, InputBookingDto inputBookingDto) throws NotAvailableException {
-        validateStartEndOfBooking(inputBookingDto);
         final User booker = userRepository.findById(userId).orElseThrow(() -> new SubstanceNotFoundException(
                 String.format("There isn't user with id %d in database.", userId)));
         Item bookingItem = itemRepository.findById(inputBookingDto.getItemId())
@@ -207,11 +206,5 @@ public class BookingServiceImpl implements BookingService {
         booking.setStatus(status);
         Booking newBooking = bookingRepository.save(booking);
         return BookingMapper.toBookingDto(newBooking);
-    }
-
-    private void validateStartEndOfBooking(InputBookingDto inputBookingDto) {
-        if (inputBookingDto.getStart().isAfter(inputBookingDto.getEnd())) {
-            throw new IllegalArgumentException("Start of booking cannot ba after its end.");
-        }
     }
 }
